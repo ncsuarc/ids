@@ -3,6 +3,7 @@
 from distutils.core import setup, Extension
 
 module = Extension("ids",
+                   extra_compile_args = ['-std=gnu99'],
                    libraries = ['ueye_api'],
                    sources = ['ids.c'])
 
