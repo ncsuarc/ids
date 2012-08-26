@@ -7,8 +7,6 @@
 static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds);
 
-static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
-
 PyMemberDef ids_Camera_members[] = {
     {"handle", T_UINT, offsetof(ids_Camera, handle), 0, "camera handle"},
     {NULL}
@@ -44,7 +42,7 @@ PyTypeObject ids_CameraType = {
     0,                         /* tp_iternext */
     ids_Camera_methods,        /* tp_methods */
     ids_Camera_members,        /* tp_members */
-    0,                         /* tp_getset */
+    ids_Camera_getseters,      /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
@@ -62,6 +60,12 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 
     if (self != NULL) {
         self->handle = -1;
+
+        self->blah = Py_BuildValue("i", 0);
+        if (self->blah == NULL) {
+            Py_DECREF(self);
+            return NULL;
+        }
     }
 
     return (PyObject *) self;
