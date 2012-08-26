@@ -72,6 +72,7 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
 
     /* TODO: Add (more) error checking */
     if (is_InitCamera(&self->handle, NULL) != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Unable to open camera.");
         return -1;
     }
 
