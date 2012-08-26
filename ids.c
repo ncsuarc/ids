@@ -65,6 +65,7 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"handle", NULL};
 
+    /* This means the definition is: def __init__(self, handle=0): */
     self->handle = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &self->handle)) {
         return -1;
