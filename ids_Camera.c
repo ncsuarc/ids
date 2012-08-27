@@ -1,10 +1,11 @@
 #include <Python.h>
-#include "structmember.h"
+#include <structmember.h>
 #include <ueye.h>
 
 #include "ids.h"
 
 static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+static void ids_Camera_dealloc(ids_Camera *self);
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 PyMemberDef ids_Camera_members[] = {
@@ -17,7 +18,7 @@ PyTypeObject ids_CameraType = {
     "ids.Camera",              /* tp_name */
     sizeof(ids_Camera),        /* tp_basicsize */
     0,                         /* tp_itemsize */
-    0,                         /* tp_dealloc */
+    (destructor) ids_Camera_dealloc,        /* tp_dealloc */
     0,                         /* tp_print */
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
@@ -60,15 +61,18 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 
     if (self != NULL) {
         self->handle = -1;
-
-        self->blah = Py_BuildValue("i", 0);
-        if (self->blah == NULL) {
-            Py_DECREF(self);
-            return NULL;
-        }
     }
 
     return (PyObject *) self;
+}
+
+static void ids_Camera_dealloc(ids_Camera *self) {
+    Py_XDECREF(self->blah);
+
+    /* Attempt to close camera */
+    is_ExitCamera(self->handle);
+
+    self->ob_type->tp_free((PyObject*)self);
 }
 
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
@@ -77,6 +81,11 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     /* This means the definition is: def __init__(self, handle=0): */
     self->handle = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &self->handle)) {
+        return -1;
+    }
+
+    self->blah = PyLong_FromLong(69);
+    if (self->blah == NULL) {
         return -1;
     }
 

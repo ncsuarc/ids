@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "structmember.h"
+#include <structmember.h>
 #include <ueye.h>
 
 #include "ids.h"

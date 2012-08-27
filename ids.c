@@ -1,5 +1,5 @@
 #include <Python.h>
-#include "structmember.h"
+#include <structmember.h>
 #include <ueye.h>
 
 #include "ids.h"
@@ -13,6 +13,10 @@ PyMODINIT_FUNC initids(void) {
     }
 
     m = Py_InitModule("ids", idsMethods);
+
+    if (m == NULL) {
+        return NULL;
+    }
 
     Py_INCREF(&ids_CameraType);
     PyModule_AddObject(m, "Camera", (PyObject *) &ids_CameraType);
