@@ -72,7 +72,7 @@ static void ids_Camera_dealloc(ids_Camera *self) {
     /* Attempt to close camera */
     is_ExitCamera(self->handle);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {

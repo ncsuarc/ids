@@ -30,7 +30,7 @@ static PyObject *ids_camera_list(PyObject *self, PyObject *args) {
     PyObject *dict = PyDict_New();
     PyObject *list = PyList_New(0);
 
-    PyDict_SetItemString(dict, "dwCount", PyInt_FromLong(cameras.dwCount));
+    PyDict_SetItemString(dict, "dwCount", PyLong_FromLong(cameras.dwCount));
     PyDict_SetItemString(dict, "uci", list);
 
     for (int i = 0; i < cameras.dwCount; i++) {
