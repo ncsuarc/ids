@@ -4,12 +4,21 @@
 /* Module methods */
 extern PyMethodDef idsMethods[];
 
+/* IDS data structures */
+struct allocated_mem {
+    char *mem;
+    int id;
+    struct allocated_mem *next;
+};
+
 /* Camera class */
 typedef struct {
     PyObject_HEAD;
-    HIDS handle;
-    PyObject *blah;
-    /* Type fields here */
+    /* Externally available elements (in Python) */
+    HIDS                    handle;
+    PyObject                *blah;
+    /* Internal structures */
+    struct allocated_mem    *mem;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 
 extern PyTypeObject ids_CameraType;

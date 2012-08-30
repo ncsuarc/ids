@@ -61,6 +61,7 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 
     if (self != NULL) {
         self->handle = -1;
+        self->mem = NULL;
     }
 
     return (PyObject *) self;
@@ -68,6 +69,15 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 
 static void ids_Camera_dealloc(ids_Camera *self) {
     Py_XDECREF(self->blah);
+
+    struct allocated_mem *prev = self->mem;
+    struct allocated_mem *curr = self->mem;
+    while (curr) {
+        prev = curr;
+        curr = curr->next;
+        is_FreeImageMem(self->handle, prev->mem, prev->id);
+        free(prev);
+    }
 
     /* Attempt to close camera */
     is_ExitCamera(self->handle);
