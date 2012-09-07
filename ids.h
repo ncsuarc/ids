@@ -21,6 +21,8 @@ typedef struct {
     struct allocated_mem    *mem;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 
+void free_all_ids_mem(ids_Camera *self);
+
 extern PyTypeObject ids_CameraType;
 extern PyMethodDef ids_Camera_methods[];
 extern PyGetSetDef ids_Camera_getseters[];
