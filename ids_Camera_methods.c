@@ -5,14 +5,12 @@
 #include "ids.h"
 
 static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_alloc_mem(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 static int add_mem(ids_Camera *self, char *mem, int id);
 
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
-    {"setup_buffers", (PyCFunction) ids_Camera_alloc_mem, METH_VARARGS, "Adds memory to ring buffer for image capture."},
     {"start_queue", (PyCFunction) ids_Camera_start_queue, METH_VARARGS, "Initializes image buffer queue mode."},
     {NULL}
 };
@@ -27,20 +25,9 @@ static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kw
     return Py_True;
 }
 
-static PyObject *ids_Camera_alloc_mem(ids_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"width", "height", "bitdepth", "num", NULL};
-
-    int width = 3840;
-    int height = 2748;
-    int bitdepth = 32;
-    uint32_t num = 3;
+PyObject *alloc_ids_mem(ids_Camera *self, int width, int height, int bitdepth, uint32_t num) {
     char *mem;
     int id;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiiI", kwlist, &width, &height, &bitdepth, &num)) {
-        Py_INCREF(Py_False);
-        return Py_False;
-    }
 
     for (int i = 0; i < num; i++) {
         int ret;

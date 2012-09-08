@@ -79,11 +79,12 @@ static void ids_Camera_dealloc(ids_Camera *self) {
 }
 
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"handle", NULL};
+    static char *kwlist[] = {"handle", "nummem", NULL};
+    uint32_t nummem = 3;
 
     /* This means the definition is: def __init__(self, handle=0): */
     self->handle = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &self->handle)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iI", kwlist, &self->handle, &nummem)) {
         return -1;
     }
 
@@ -95,6 +96,13 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     /* TODO: Add (more) error checking */
     if (is_InitCamera(&self->handle, NULL) != IS_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Unable to open camera.");
+        return -1;
+    }
+
+    int width = 3840;
+    int height = 2748;
+    int bitdepth = 32;
+    if (!alloc_ids_mem(self, width, height, bitdepth, nummem)) {
         return -1;
     }
 
