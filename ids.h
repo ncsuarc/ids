@@ -21,6 +21,7 @@ typedef struct {
     struct allocated_mem    *mem;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 
+void add_constants(PyObject *m);
 PyObject *alloc_ids_mem(ids_Camera *self, int width, int height, int bitdepth, uint32_t num);
 void free_all_ids_mem(ids_Camera *self);
 

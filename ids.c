@@ -48,6 +48,8 @@ PyMODINIT_FUNC initids(void) {
     Py_INCREF(&ids_CameraType);
     PyModule_AddObject(m, "Camera", (PyObject *) &ids_CameraType);
 
+    add_constants(m);
+
     #if PY_MAJOR_VERSION >= 3
     return m;
     #endif
