@@ -13,14 +13,18 @@ static int ids_Camera_setheight(ids_Camera *self, PyObject *value, void *closure
 static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure);
 static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure);
-static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_Camera_getcolor_mode(ids_Camera *self, void *closure);
+static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *closure);
+
+static PyObject *ids_Camera_getgain(ids_Camera *self, void *closure);
+static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure);
 
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
-    {"color", (getter) ids_Camera_getcolor, (setter) ids_Camera_setcolor, "Color mode of images", NULL},
+    {"color_mode", (getter) ids_Camera_getcolor_mode, (setter) ids_Camera_setcolor_mode, "Color mode of images", NULL},
+    {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {NULL}
 };
 
@@ -93,13 +97,13 @@ static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *clo
     return -1;
 }
 
-static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure) {
+static PyObject *ids_Camera_getcolor_mode(ids_Camera *self, void *closure) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
 
     return PyInt_FromLong(color);
 }
 
-static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color'");
         return -1;
@@ -118,9 +122,44 @@ static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure)
         return -1;
     }
 
-    if (!set_color(self, color)) {
+    if (!set_color_mode(self, color)) {
         return -1;
     }
 
     return 0;
+}
+
+static PyObject *ids_Camera_getgain(ids_Camera *self, void *closure) {
+    int gain = is_SetHardwareGain(self->handle, IS_GET_MASTER_GAIN, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
+
+    return PyInt_FromLong(gain);
+}
+
+static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'gain'");
+        return -1;
+    }
+
+    if (!PyInt_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Gain must be an int.");
+        return -1;
+    }
+
+    int gain = (int) PyInt_AsLong(value);
+    Py_DECREF(value);
+
+    int ret = is_SetHardwareGain(self->handle, gain, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Gain out of range.");
+        return -1;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set gain.");
+        return -1;
+    }
+
+    return -1;
 }

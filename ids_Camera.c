@@ -98,7 +98,7 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
         return -1;
     }
 
-    if (!set_color(self, color)) {
+    if (!set_color_mode(self, color)) {
         return -1;
     }
 

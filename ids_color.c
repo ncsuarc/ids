@@ -18,7 +18,7 @@ int color_to_bitdepth(int color) {
     }
 }
 
-PyObject *set_color(ids_Camera *self, int color) {
+PyObject *set_color_mode(ids_Camera *self, int color) {
     int ret = is_SetColorMode(self->handle, color);
     switch (ret) {
     case IS_SUCCESS:

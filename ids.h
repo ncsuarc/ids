@@ -24,7 +24,7 @@ typedef struct {
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 
 void add_constants(PyObject *m);
-PyObject *set_color(ids_Camera *self, int color);
+PyObject *set_color_mode(ids_Camera *self, int color);
 int color_to_bitdepth(int color);
 PyObject *alloc_ids_mem(ids_Camera *self, int width, int height, uint32_t num);
 void free_all_ids_mem(ids_Camera *self);
