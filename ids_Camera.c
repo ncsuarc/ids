@@ -62,14 +62,13 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
     if (self != NULL) {
         self->handle = -1;
         self->mem = NULL;
+        self->bitdepth = 0;
     }
 
     return (PyObject *) self;
 }
 
 static void ids_Camera_dealloc(ids_Camera *self) {
-    Py_XDECREF(self->blah);
-
     free_all_ids_mem(self);
 
     /* Attempt to close camera */
@@ -79,17 +78,13 @@ static void ids_Camera_dealloc(ids_Camera *self) {
 }
 
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"handle", "nummem", NULL};
+    static char *kwlist[] = {"handle", "nummem", "color", NULL};
     uint32_t nummem = 3;
+    int color = IS_CM_BGRA8_PACKED;
     self->handle = 0;
 
-    /* This means the definition is: def __init__(self, handle=0, nummem=3): */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iI", kwlist, &self->handle, &nummem)) {
-        return -1;
-    }
-
-    self->blah = PyLong_FromLong(69);
-    if (self->blah == NULL) {
+    /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids.COLOR_BGA8): */
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iIi", kwlist, &self->handle, &nummem, &color)) {
         return -1;
     }
 
@@ -99,10 +94,13 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
         return -1;
     }
 
+    if (!set_color(self, color)) {
+        return -1;
+    }
+
     int width = 3840;
     int height = 2748;
-    int bitdepth = 8;
-    if (!alloc_ids_mem(self, width, height, bitdepth, nummem)) {
+    if (!alloc_ids_mem(self, width, height, nummem)) {
         return -1;
     }
 

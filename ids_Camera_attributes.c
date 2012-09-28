@@ -7,8 +7,12 @@
 static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure);
 static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure);
+static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
+    {"color", (getter) ids_Camera_getcolor, (setter) ids_Camera_setcolor, "Color mode of images", NULL},
     {NULL}
 };
 
@@ -60,5 +64,16 @@ static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *clo
         PyErr_SetString(PyExc_IOError, "Failed to set pixel clock.");
     }
 
+    return -1;
+}
+
+static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure) {
+    int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
+
+    return PyInt_FromLong(color);
+}
+
+static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_NotImplementedError, "Changing color mode after initialization not yet supported.");
     return -1;
 }
