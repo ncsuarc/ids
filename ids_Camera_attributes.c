@@ -39,13 +39,13 @@ static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *clo
     }
 
     if (!PyInt_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Attribute must be an int.");
+        PyErr_SetString(PyExc_TypeError, "Pixel clock must be an int.");
         return -1;
     }
 
     int clock = (int) PyInt_AsLong(value);
     if (clock < 0) {
-        PyErr_SetString(PyExc_ValueError, "Attribute must be positive.");
+        PyErr_SetString(PyExc_ValueError, "Pixel clock must be positive.");
         return -1;
     }
 
@@ -74,6 +74,27 @@ static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure) {
 }
 
 static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure) {
-    PyErr_SetString(PyExc_NotImplementedError, "Changing color mode after initialization not yet supported.");
-    return -1;
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color'");
+        return -1;
+    }
+
+    if (!PyInt_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Color mode must be an int.");
+        return -1;
+    }
+
+    int color = (int) PyInt_AsLong(value);
+    Py_DECREF(value);
+
+    if (self->bitdepth != color_to_bitdepth(color)) {
+        PyErr_SetString(PyExc_NotImplementedError, "Changing color mode to different bitdepth not yet supported.");
+        return -1;
+    }
+
+    if (!set_color(self, color)) {
+        return -1;
+    }
+
+    return 0;
 }
