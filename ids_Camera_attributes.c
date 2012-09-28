@@ -4,6 +4,12 @@
 
 #include "ids.h"
 
+static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure);
+static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure);
+
+static PyObject *ids_Camera_getheight(ids_Camera *self, void *closure);
+static int ids_Camera_setheight(ids_Camera *self, PyObject *value, void *closure);
+
 static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure);
 static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *closure);
 
@@ -11,10 +17,30 @@ static PyObject *ids_Camera_getcolor(ids_Camera *self, void *closure);
 static int ids_Camera_setcolor(ids_Camera *self, PyObject *value, void *closure);
 
 PyGetSetDef ids_Camera_getseters[] = {
+    {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
+    {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
     {"color", (getter) ids_Camera_getcolor, (setter) ids_Camera_setcolor, "Color mode of images", NULL},
     {NULL}
 };
+
+static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure) {
+    return PyInt_FromLong(self->width);
+}
+
+static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_NotImplementedError, "Changing image width not yet supported.");
+    return -1;
+}
+
+static PyObject *ids_Camera_getheight(ids_Camera *self, void *closure) {
+    return PyInt_FromLong(self->height);
+}
+
+static int ids_Camera_setheight(ids_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_NotImplementedError, "Changing image height not yet supported.");
+    return -1;
+}
 
 static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure) {
     UINT clock;

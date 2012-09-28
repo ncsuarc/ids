@@ -16,6 +16,8 @@ typedef struct {
     PyObject_HEAD;
     /* Externally available elements (in Python) */
     HIDS                    handle;
+    uint32_t                width;
+    uint32_t                height;
     /* Internal structures */
     struct allocated_mem    *mem;
     int                     bitdepth;

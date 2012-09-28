@@ -61,6 +61,8 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
 
     if (self != NULL) {
         self->handle = -1;
+        self->width = 0;
+        self->height = 0;
         self->mem = NULL;
         self->bitdepth = 0;
     }
@@ -82,6 +84,8 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     uint32_t nummem = 3;
     int color = IS_CM_BGRA8_PACKED;
     self->handle = 0;
+    self->width = 3840;
+    self->height = 2748;
 
     /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids.COLOR_BGA8): */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iIi", kwlist, &self->handle, &nummem, &color)) {
