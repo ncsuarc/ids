@@ -3,6 +3,7 @@
 #include <ueye.h>
 
 #include "ids.h"
+#include "intobject.h"
 
 static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure);
 static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure);

@@ -56,8 +56,16 @@ PyMODINIT_FUNC initids(void) {
 }
 
 int main(int argc, char *argv[]) {
+    #if PY_MAJOR_VERSION >= 3
+    wchar_t name[128];
+    mbstowcs(name, argv[0], 128);
+    #else
+    char name[128];
+    strncpy(name, argv[0], 128);
+    #endif
+
     /* Pass argv[0] to the Python interpreter */
-    Py_SetProgramName(argv[0]);
+    Py_SetProgramName(name);
 
     /* Initialize the Python interpreter.  Required. */
     Py_Initialize();

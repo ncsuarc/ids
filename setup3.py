@@ -13,7 +13,7 @@ module = Extension("ids",
                         'ids_Camera_methods.c', 
                         'ids_Camera_attributes.c',
                         'ids_mem.c',
-                        'ids_colot.c'
+                        'ids_color.c'
                    ])
 
 setup (name = 'ids',
