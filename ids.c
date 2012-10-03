@@ -2,6 +2,9 @@
 #include <structmember.h>
 #include <ueye.h>
 
+#define PY_ARRAY_UNIQUE_SYMBOL  ids_ARRAY_API
+#include <numpy/arrayobject.h>
+
 #include "ids.h"
 
 #if PY_MAJOR_VERSION >= 3
@@ -30,6 +33,8 @@ PyMODINIT_FUNC initids(void) {
         return;
         #endif
     }
+
+    import_array();
 
     #if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&idsmodule);
