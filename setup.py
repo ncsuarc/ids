@@ -4,7 +4,8 @@ from distutils.core import setup, Extension
 
 module = Extension("ids",
                    extra_compile_args = ['-std=gnu99', '-g3'],
-                   libraries = ['ueye_api'],
+                   library_dirs = ['/usr/local/lib/'],
+                   libraries = ['ueye_api', 'm', 'z', 'tiff'],
                    sources = [
                         'ids.c', 
                         'ids_methods.c',

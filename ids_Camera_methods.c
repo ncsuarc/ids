@@ -7,12 +7,15 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 
+#include "tiffio.h"
+
 #include "ids.h"
 
 static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 static PyObject *create_matrix(ids_Camera *self, uint8_t *mem);
 
@@ -21,6 +24,7 @@ PyMethodDef ids_Camera_methods[] = {
     {"start_queue", (PyCFunction) ids_Camera_start_queue, METH_VARARGS, "Initializes image buffer queue mode."},
     {"freeze_save", (PyCFunction) ids_Camera_freeze_save, METH_VARARGS, "Capture an image and save it."},
     {"freeze", (PyCFunction) ids_Camera_freeze, METH_VARARGS, "Capture an image."},
+    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG."},
     {NULL}
 };
 
@@ -153,4 +157,76 @@ static PyObject *create_matrix(ids_Camera *self, uint8_t *mem) {
     }
 
     return (PyObject*)matrix;
+}
+
+static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds) {
+    static char *kwlist[] = {"image", "filename", NULL};
+    PyArrayObject* matrix;
+    char *filename;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "Os", kwlist, &matrix, &filename)) {
+        PyErr_SetString(PyExc_TypeError, "Object must be nparray, filename must be string.");
+        return NULL;
+    }
+
+    if (!PyArray_Check(matrix)) {
+        PyErr_SetString(PyExc_TypeError, "nparray required");
+        return NULL;
+    }
+
+    if (!PyArray_ISCONTIGUOUS(matrix)) {
+        PyErr_SetString(PyExc_TypeError, "nparray must be contiguous.");
+        return NULL;
+    }
+
+    char *mem = PyArray_BYTES(matrix);
+
+    short cfapatterndim[] = {2,2};
+    char  cfapattern[] = {0,1,1,2};
+
+    /* Not for our camera! */
+    static const float cam_xyz[] =
+    { 2.005,-0.771,-0.269, -0.752,1.688,0.064, -0.149,0.283,0.745 };
+
+    TIFF *file = NULL;
+
+    file = TIFFOpen(filename, "w");
+
+    if (file == NULL) {
+        PyErr_SetString(PyExc_IOError, "libtiff failed to open file for writing.");
+        return NULL;
+    }
+
+    TIFFSetField(file, TIFFTAG_IMAGEWIDTH, self->width);
+    TIFFSetField(file, TIFFTAG_IMAGELENGTH, self->height);
+    TIFFSetField(file, TIFFTAG_BITSPERSAMPLE, self->bitdepth);
+    TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
+    TIFFSetField(file, TIFFTAG_CFAPATTERN, cfapattern);
+    TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
+    TIFFSetField(file, TIFFTAG_UNIQUECAMERAMODEL, "IDS UI549xSE-C");
+
+    TIFFSetField(file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_CFA);
+    TIFFSetField(file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+    TIFFSetField(file, TIFFTAG_SUBFILETYPE, 0);
+    TIFFSetField(file, TIFFTAG_SAMPLESPERPIXEL, 1);
+    TIFFSetField(file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
+    TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
+
+    for (int row = 0; row < self->height; row++) {
+        if (TIFFWriteScanline(file, mem, row, 0) < 0) {
+            TIFFClose(file);
+            PyErr_SetString(PyExc_IOError, "libtiff failed to write row.");
+            return NULL;
+        }
+        else {
+            mem += self->width * self->bitdepth/8;
+        }
+    }
+
+    TIFFWriteDirectory(file);
+    TIFFClose(file);
+
+    Py_INCREF(Py_True);
+    return Py_True;
 }
