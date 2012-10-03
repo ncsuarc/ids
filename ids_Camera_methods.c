@@ -14,6 +14,8 @@ static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObje
 static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *kwds);
 
+static PyObject *create_matrix(ids_Camera *self, uint8_t *mem);
+
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
     {"start_queue", (PyCFunction) ids_Camera_start_queue, METH_VARARGS, "Initializes image buffer queue mode."},
@@ -105,12 +107,50 @@ static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *k
         return NULL;
     }
 
-    npy_intp dims[2];
-    dims[0] = self->height;
-    dims[1] = self->width;
+    return create_matrix(self, mem);
+}
 
-    PyArrayObject* matrix = (PyArrayObject*)PyArray_SimpleNew(2, dims, NPY_UINT8);
-    memcpy(PyArray_DATA(matrix), mem, sizeof(uint8_t) * dims[0] * dims[1]);
+static PyObject *create_matrix(ids_Camera *self, uint8_t *mem) {
+    int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
+    PyArrayObject* matrix;
+
+    switch (color) {
+    case IS_CM_BAYER_RG8: {
+        npy_intp dims[2];
+        dims[0] = self->height;
+        dims[1] = self->width;
+
+        matrix = (PyArrayObject*)PyArray_SimpleNew(2, dims, NPY_UINT8);
+        memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
+        break; 
+    }
+    case IS_CM_BAYER_RG12: /* You need to left shift the output by 4 bits */
+    case IS_CM_BAYER_RG16: {
+        npy_intp dims[2];
+        dims[0] = self->height;
+        dims[1] = self->width;
+
+        matrix = (PyArrayObject*)PyArray_SimpleNew(2, dims, NPY_UINT16);
+        memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
+        break;
+    }
+    case IS_CM_BGRA8_PACKED:
+    case IS_CM_BGRY8_PACKED:
+    case IS_CM_RGBA8_PACKED:
+    case IS_CM_RGBY8_PACKED: {
+        npy_intp dims[3];
+        dims[0] = self->height;
+        dims[1] = self->width;
+        dims[2] = 4;
+
+        matrix = (PyArrayObject*)PyArray_SimpleNew(3, dims, NPY_UINT8);
+        memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
+        break;
+    }
+    default:
+        PyErr_SetString(PyExc_NotImplementedError, "Unsupport color format for conversion to array.");
+        return NULL;
+    }
 
     return (PyObject*)matrix;
 }
