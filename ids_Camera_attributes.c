@@ -20,14 +20,69 @@ static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *clo
 static PyObject *ids_Camera_getgain(ids_Camera *self, void *closure);
 static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure);
+static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
     {"color_mode", (getter) ids_Camera_getcolor_mode, (setter) ids_Camera_setcolor_mode, "Color mode of images", NULL},
     {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
+    {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
     {NULL}
 };
+
+static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure) {
+    double exposure;
+    int ret;
+    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_GET_EXPOSURE, &exposure, sizeof(exposure));
+    switch (ret) {
+    case IS_SUCCESS:
+        return PyFloat_FromDouble(exposure);
+        break;
+    default:
+        PyErr_Format(PyExc_IOError, "Failed to retrieve exposure time from camera. Returned: %d", ret);
+    }
+
+    return NULL;
+}
+
+static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure) {
+    double exposure;
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'exposure' (that would be silly)");
+        return -1;
+    }
+
+    PyObject *flt = PyNumber_Float(value);
+    if (flt == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
+        Py_DECREF(value);
+        return -1;
+    }
+
+    exposure = PyFloat_AsDouble(flt); 
+
+    Py_DECREF(flt);
+
+    int ret;
+    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &exposure, sizeof(exposure));
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+        break;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Exposure out of range");
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to set exposure time");
+    }
+
+    return -1;
+}
+
 
 static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure) {
     return PyInt_FromLong(self->width);
@@ -69,18 +124,23 @@ static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *clo
         return -1;
     }
 
-    if (!PyInt_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Pixel clock must be an int.");
+    int clock;
+
+    if (PyInt_Check(value)) {
+        clock = (int) PyInt_AsLong(value);
+    }
+    else if (PyLong_Check(value)) {
+        clock = (int) PyLong_AsLong(value);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, "Pixel clock must be an int or long.");
         return -1;
     }
 
-    int clock = (int) PyInt_AsLong(value);
     if (clock < 0) {
         PyErr_SetString(PyExc_ValueError, "Pixel clock must be positive.");
         return -1;
     }
-
-    Py_DECREF(value);
 
     int ret;
     ret = is_PixelClock(self->handle, IS_PIXELCLOCK_CMD_SET, (void*) &clock, sizeof(clock));

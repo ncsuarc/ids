@@ -9,7 +9,6 @@ static void ids_Camera_dealloc(ids_Camera *self);
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 PyMemberDef ids_Camera_members[] = {
-    {"handle", T_UINT, offsetof(ids_Camera, handle), 0, "camera handle"},
     {NULL}
 };
 
