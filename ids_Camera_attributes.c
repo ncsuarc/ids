@@ -23,6 +23,9 @@ static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure);
 static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure);
 static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure);
+static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
@@ -30,59 +33,9 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"color_mode", (getter) ids_Camera_getcolor_mode, (setter) ids_Camera_setcolor_mode, "Color mode of images", NULL},
     {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
+    {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
     {NULL}
 };
-
-static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure) {
-    double exposure;
-    int ret;
-    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_GET_EXPOSURE, &exposure, sizeof(exposure));
-    switch (ret) {
-    case IS_SUCCESS:
-        return PyFloat_FromDouble(exposure);
-        break;
-    default:
-        PyErr_Format(PyExc_IOError, "Failed to retrieve exposure time from camera. Returned: %d", ret);
-    }
-
-    return NULL;
-}
-
-static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure) {
-    double exposure;
-
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'exposure' (that would be silly)");
-        return -1;
-    }
-
-    PyObject *flt = PyNumber_Float(value);
-    if (flt == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
-        Py_DECREF(value);
-        return -1;
-    }
-
-    exposure = PyFloat_AsDouble(flt); 
-
-    Py_DECREF(flt);
-
-    int ret;
-    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &exposure, sizeof(exposure));
-    switch (ret) {
-    case IS_SUCCESS:
-        return 0;
-        break;
-    case IS_INVALID_PARAMETER:
-        PyErr_SetString(PyExc_ValueError, "Exposure out of range");
-        break;
-    default:
-        PyErr_SetString(PyExc_IOError, "Failed to set exposure time");
-    }
-
-    return -1;
-}
-
 
 static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure) {
     return PyInt_FromLong(self->width);
@@ -219,6 +172,104 @@ static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure) 
         return -1;
     default:
         PyErr_SetString(PyExc_IOError, "Unable to set gain.");
+        return -1;
+    }
+
+    return -1;
+}
+
+static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure) {
+    double exposure;
+    int ret;
+    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_GET_EXPOSURE, &exposure, sizeof(exposure));
+    switch (ret) {
+    case IS_SUCCESS:
+        return PyFloat_FromDouble(exposure);
+        break;
+    default:
+        PyErr_Format(PyExc_IOError, "Failed to retrieve exposure time from camera. Returned: %d", ret);
+    }
+
+    return NULL;
+}
+
+static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure) {
+    double exposure;
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'exposure' (that would be silly)");
+        return -1;
+    }
+
+    PyObject *flt = PyNumber_Float(value);
+    if (flt == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
+        Py_DECREF(value);
+        return -1;
+    }
+
+    exposure = PyFloat_AsDouble(flt); 
+
+    Py_DECREF(flt);
+
+    int ret;
+    ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &exposure, sizeof(exposure));
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+        break;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Exposure out of range");
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to set exposure time");
+    }
+
+    return -1;
+}
+
+static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure) {
+    double val;
+    int ret;
+    
+    ret = is_SetAutoParameter(self->handle, IS_GET_ENABLE_AUTO_SHUTTER, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get auto exposure setting.");
+    }
+        
+    if (val) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    else {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+}
+
+static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'gain'");
+        return -1;
+    }
+
+    if (!PyBool_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Gain must be a bool.");
+        return -1;
+    }
+
+    double val = (value == Py_True) ? 1 : 0;
+    Py_DECREF(value);
+
+    int ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_SHUTTER, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
         return -1;
     }
 
