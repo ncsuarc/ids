@@ -29,6 +29,9 @@ static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *
 static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure);
 static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closure);
+static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
@@ -38,6 +41,7 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
     {"auto_speed", (getter) ids_Camera_getauto_speed, (setter) ids_Camera_setauto_speed, "Auto speed", NULL},
+    {"auto_white_balance", (getter) ids_Camera_getauto_white_balance, (setter) ids_Camera_setauto_white_balance, "Auto White Balance", NULL},
     {NULL}
 };
 
@@ -322,4 +326,94 @@ static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *clo
     }
 
     return -1;
+}
+
+static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closure) {
+    double val;
+    UINT val2;
+    int ret;
+    
+    ret = is_SetAutoParameter(self->handle, IS_GET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+    }
+
+    ret = is_AutoParameter(self->handle, IS_AWB_CMD_GET_ENABLE, &val2, sizeof(val2));
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+    }
+        
+    if (val && val2) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+    else if (val || val2) {
+        PyErr_SetString(PyExc_StandardError, "Only one white balance setting is enabled.  It may or may not work.");
+        return NULL;
+    }
+    else {
+        Py_INCREF(Py_False);
+        return Py_False;
+    }
+}
+
+static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_white_balance'");
+        return -1;
+    }
+
+    if (!PyBool_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Auto white balance must be a bool.");
+        return -1;
+    }
+
+    double val = (value == Py_True) ? 1 : 0;
+    Py_DECREF(value);
+
+    int ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        return -1;
+    }
+
+    UINT val2 = val/1;
+
+    ret = is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        val = 0;
+        is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        return -1;
+    }
+
+    if (val2) {
+        UINT nType = IS_AWB_COLOR_TEMPERATURE;
+        ret = is_AutoParameter(self->handle, IS_AWB_CMD_SET_TYPE, (void*)&nType, sizeof(nType));
+        switch (ret) {
+        case IS_SUCCESS:
+            break;
+        default:
+            val = 0;
+            is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+            val2 = 0;
+            is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
+            PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+            return -1;
+        }
+    }
+
+    return 0;
 }
