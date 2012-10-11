@@ -32,6 +32,9 @@ static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *clo
 static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closure);
 static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure);
+static int ids_Camera_setcolor_correction(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
@@ -42,6 +45,7 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
     {"auto_speed", (getter) ids_Camera_getauto_speed, (setter) ids_Camera_setauto_speed, "Auto speed", NULL},
     {"auto_white_balance", (getter) ids_Camera_getauto_white_balance, (setter) ids_Camera_setauto_white_balance, "Auto White Balance", NULL},
+    {"color_correction", (getter) ids_Camera_getcolor_correction, (setter) ids_Camera_setcolor_correction, "IR color correction factor", NULL},
     {NULL}
 };
 
@@ -246,6 +250,7 @@ static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure) {
         break;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to get auto exposure setting.");
+        return NULL;
     }
         
     if (val) {
@@ -294,6 +299,7 @@ static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure) {
         break;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to get auto speed setting.");
+        return NULL;
     }
         
     return PyFloat_FromDouble(val);
@@ -339,6 +345,7 @@ static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closur
         break;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+        return NULL;
     }
 
     ret = is_AutoParameter(self->handle, IS_AWB_CMD_GET_ENABLE, &val2, sizeof(val2));
@@ -347,6 +354,7 @@ static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closur
         break;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+        return NULL;
     }
         
     if (val && val2) {
@@ -416,4 +424,70 @@ static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, v
     }
 
     return 0;
+}
+
+static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure) {
+    double factor;
+    int ret;
+    
+    ret = is_SetColorCorrection(self->handle, IS_GET_CCOR_MODE, &factor);
+    switch (ret) {
+    case IS_CCOR_ENABLE_NORMAL:
+    case IS_CCOR_ENABLE_BG40_ENHANCED:
+    case IS_CCOR_ENABLE_HQ_ENHANCED:
+        Py_INCREF(Py_True);
+        return Py_True;
+    case IS_CCOR_DISABLE:
+        Py_INCREF(Py_False);
+        return Py_False;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get color correction setting.");
+        return NULL;
+    }
+}
+
+static int ids_Camera_setcolor_correction(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color_correction'");
+        return -1;
+    }
+
+    /* Disable color correction */
+    if (value == Py_False) {
+        double factor;
+        Py_DECREF(value);
+
+        int ret = is_SetColorCorrection(self->handle, IS_CCOR_DISABLE, &factor);
+        switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+        default:
+            PyErr_SetString(PyExc_IOError, "Unable to disable color correction.");
+            return -1;
+        }
+    }
+
+    PyObject *num = PyNumber_Float(value);
+    Py_DECREF(value);
+    if (!num) {
+        PyErr_SetString(PyExc_TypeError, "Color correction factor must be a float(ish).");
+        return -1;
+    }
+
+    double factor = PyFloat_AsDouble(num);
+    Py_DECREF(num);
+
+    int ret = is_SetColorCorrection(self->handle, IS_CCOR_SET_IR_AUTOMATIC, &factor);
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Color correction factor out of range (0 to 1)");
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set color correction factor.");
+        return -1;
+    }
+
+    return -1;
 }
