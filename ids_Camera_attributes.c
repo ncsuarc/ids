@@ -26,6 +26,9 @@ static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closu
 static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure);
 static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure);
+static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure);
+
 PyGetSetDef ids_Camera_getseters[] = {
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
@@ -34,6 +37,7 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
+    {"auto_speed", (getter) ids_Camera_getauto_speed, (setter) ids_Camera_setauto_speed, "Auto speed", NULL},
     {NULL}
 };
 
@@ -252,12 +256,12 @@ static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure) {
 
 static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'gain'");
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure'");
         return -1;
     }
 
     if (!PyBool_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Gain must be a bool.");
+        PyErr_SetString(PyExc_TypeError, "Auto exposure must be a bool.");
         return -1;
     }
 
@@ -270,6 +274,50 @@ static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *
         return 0;
     default:
         PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        return -1;
+    }
+
+    return -1;
+}
+
+static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure) {
+    double val;
+    int ret;
+    
+    ret = is_SetAutoParameter(self->handle, IS_GET_AUTO_SPEED, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get auto speed setting.");
+    }
+        
+    return PyFloat_FromDouble(val);
+}
+
+static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure'");
+        return -1;
+    }
+
+    if (!PyFloat_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Auto speed must be a float.");
+        return -1;
+    }
+
+    double val = PyFloat_AsDouble(value);
+    Py_DECREF(value);
+
+    int ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_SPEED, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Auto speed out of range");
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set auto speed.");
         return -1;
     }
 
