@@ -64,6 +64,8 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
         self->height = 0;
         self->mem = NULL;
         self->bitdepth = 0;
+        self->autofeatures = 0;
+        self->queue = 0;
     }
 
     return (PyObject *) self;

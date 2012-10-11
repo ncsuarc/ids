@@ -17,7 +17,7 @@ static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObje
 static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds);
 
-static PyObject *create_matrix(ids_Camera *self, uint8_t *mem);
+static PyObject *create_matrix(ids_Camera *self, char *mem);
 
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
@@ -45,6 +45,8 @@ static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObje
         Py_INCREF(Py_False);
         return Py_False;
     }
+
+    self->queue = 1;
 
     Py_INCREF(Py_True);
     return Py_True;
@@ -101,20 +103,61 @@ static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *k
         return NULL;
     }
 
-    uint8_t *mem;
-    ret = is_GetImageMem(self->handle, (void *) &mem);
+#define IMG_TIMEOUT 5000
+
+    char *mem;
+    INT image_id;
+    if (self->queue) {
+        ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
+    }
+    else {
+        //ret = is_GetImageMem(self->handle, (void *) &mem);
+        char *mem_last;
+        image_id = -1;
+
+        do {
+            ret = is_GetActSeqBuf(self->handle, &image_id, &mem, &mem_last);
+        } while (ret == IS_SUCCESS && image_id == -1);
+
+        mem = mem_last;
+    }
     switch (ret) {
     case IS_SUCCESS:
         break;
+    case IS_TIMED_OUT:
+        PyErr_SetString(PyExc_IOError, "Capture timed out.");
+        return NULL;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to capture image.");
         return NULL;
     }
 
-    return create_matrix(self, mem);
+    if (!self->queue) {
+        ret = is_LockSeqBuf(self->handle, image_id, mem);
+        switch (ret) {
+        case IS_SUCCESS:
+            break;
+        default:
+            PyErr_SetString(PyExc_IOError, "Failed to lock image memory.");
+            return NULL;
+        }
+    }
+
+    PyObject *image = create_matrix(self, mem);
+    
+    ret = is_UnlockSeqBuf(self->handle, image_id, mem);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to unlock image memory.");
+        return NULL;
+    }
+
+    return image;
 }
 
-static PyObject *create_matrix(ids_Camera *self, uint8_t *mem) {
+static PyObject *create_matrix(ids_Camera *self, char *mem) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
     PyArrayObject* matrix;
 

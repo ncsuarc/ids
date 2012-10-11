@@ -21,6 +21,8 @@ typedef struct {
     /* Internal structures */
     struct allocated_mem    *mem;
     int                     bitdepth;
+    int                     autofeatures;
+    int                     queue;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 
 void add_constants(PyObject *m);

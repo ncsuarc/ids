@@ -280,6 +280,12 @@ static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *
     int ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_SHUTTER, &val, NULL);
     switch (ret) {
     case IS_SUCCESS:
+        if (val > 0) {
+            self->autofeatures++;
+        }
+        else {
+            self->autofeatures--;
+        }
         return 0;
     default:
         PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
@@ -390,7 +396,7 @@ static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, v
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
         return -1;
     }
 
@@ -403,7 +409,7 @@ static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, v
     default:
         val = 0;
         is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
-        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
         return -1;
     }
 
@@ -418,9 +424,16 @@ static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, v
             is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
             val2 = 0;
             is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
-            PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+            PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
             return -1;
         }
+    }
+
+    if (val > 0) {
+        self->autofeatures++;
+    }
+    else {
+        self->autofeatures--;
     }
 
     return 0;
