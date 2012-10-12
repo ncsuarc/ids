@@ -144,6 +144,14 @@ static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *k
     }
 
     PyObject *image = create_matrix(self, mem);
+    if (!image) {
+        goto fail;
+    }
+
+    PyObject *info = image_info(self, image_id);
+    if (!info) {
+        goto fail;
+    }
     
     ret = is_UnlockSeqBuf(self->handle, image_id, mem);
     switch (ret) {
@@ -154,7 +162,10 @@ static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *k
         return NULL;
     }
 
-    return image;
+    return Py_BuildValue("(OO)", image, info);
+
+fail:
+    return NULL;
 }
 
 static PyObject *create_matrix(ids_Camera *self, char *mem) {

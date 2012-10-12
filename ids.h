@@ -30,6 +30,7 @@ PyObject *set_color_mode(ids_Camera *self, int color);
 int color_to_bitdepth(int color);
 PyObject *alloc_ids_mem(ids_Camera *self, int width, int height, uint32_t num);
 void free_all_ids_mem(ids_Camera *self);
+PyObject *image_info(ids_Camera *self, int image_id);
 
 extern PyTypeObject ids_CameraType;
 extern PyMethodDef ids_Camera_methods[];
