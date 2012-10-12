@@ -317,8 +317,10 @@ static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *clo
         return -1;
     }
 
-    if (!PyFloat_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Auto speed must be a float.");
+    PyObject *flt = PyNumber_Float(value);
+    if (flt == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
+        Py_DECREF(value);
         return -1;
     }
 
