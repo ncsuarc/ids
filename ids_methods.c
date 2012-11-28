@@ -8,8 +8,8 @@ static PyObject *ids_number_cameras(PyObject *self, PyObject *args);
 static PyObject *ids_camera_list(PyObject *self, PyObject *args);
 
 PyMethodDef idsMethods[] = {
-    {"number_cameras", ids_number_cameras, METH_VARARGS, "Return the number of cameras connected."},
-    {"camera_list", ids_camera_list, METH_VARARGS, "Information on each detected camera."},
+    {"number_cameras", ids_number_cameras, METH_VARARGS, "number_cameras() -> number of cameras connected."},
+    {"camera_list", ids_camera_list, METH_VARARGS, "camera_list() -> list of cameras with metadata."},
     {NULL, NULL, 0, NULL}
 };
 

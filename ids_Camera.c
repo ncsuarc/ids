@@ -33,7 +33,12 @@ PyTypeObject ids_CameraType = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,        /* tp_flags */
-    "IDS Camera Object",       /* tp_doc */
+    "Camera([handle=0, nummem=3, color=ids.COLOR_BGRA8]) -> Camera object\n\n"
+    "Handle allows selection of camera to connect to.\n"
+    "nummem is the number of image memory buffers to create for image storage.\n"
+    "Color is the color space in which to store images.\n"
+    "This can only be changed after initialization with Camera.color if it won't\n"
+    "change the bitdepth, as that would require the size of the memory buffers change.",       /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */

@@ -22,11 +22,11 @@ static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject 
 static PyObject *create_matrix(ids_Camera *self, char *mem);
 
 PyMethodDef ids_Camera_methods[] = {
-    {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
-    {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "Initializes continuous image capture."},
-    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "Saves next image in buffer and returns metadata."},
-    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer and metadata."},
-    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG.  Currently only supports bayer images."},
+    {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "close()\n\nCloses open camera"},
+    {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "start_continuous()\n\nInitializes continuous image capture."},
+    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
+    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},
+    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "save_dng(image, filename)\n\nSave a captured image as a DNG.  Image must be a numpy array,\nand is expected to be one returned from next().\nCurrently only supports bayer images."},
     {NULL}
 };
 
