@@ -24,8 +24,8 @@ static PyObject *create_matrix(ids_Camera *self, char *mem);
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
     {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "Initializes continuous image capture."},
-    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS, "Saves next image in buffer."},
-    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer."},
+    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS, "Saves next image in buffer and returns metadata."},
+    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer and metadata."},
     {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG.  Currently only supports bayer images."},
     {NULL}
 };
@@ -96,10 +96,15 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to save image.");
+        PyErr_Format(PyExc_IOError, "Failed to save image. ret = %d", ret);
         return NULL;
     }
 
+    PyObject *info = image_info(self, image_id);
+    if (!info) {
+        return NULL;
+    }
+    
     ret = is_UnlockSeqBuf(self->handle, image_id, mem);
     switch (ret) {
     case IS_SUCCESS:
@@ -109,8 +114,7 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
         return NULL;
     }
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    return info;
 }
 
 static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds) {
