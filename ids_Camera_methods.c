@@ -28,7 +28,7 @@ PyMethodDef ids_Camera_methods[] = {
     {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "Initializes continuous image capture."},
     {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS, "Saves next image in buffer."},
     {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer."},
-    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG."},
+    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG.  Currently only supports bayer images."},
     {NULL}
 };
 
