@@ -11,10 +11,13 @@
 
 #include "ids.h"
 
+#define IMG_TIMEOUT 5000
+
 static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 static PyObject *create_matrix(ids_Camera *self, char *mem);
@@ -22,8 +25,9 @@ static PyObject *create_matrix(ids_Camera *self, char *mem);
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
     {"start_queue", (PyCFunction) ids_Camera_start_queue, METH_VARARGS, "Initializes image buffer queue mode."},
-    {"freeze_save", (PyCFunction) ids_Camera_freeze_save, METH_VARARGS, "Capture an image and save it."},
-    {"freeze", (PyCFunction) ids_Camera_freeze, METH_VARARGS, "Capture an image."},
+    {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "Initializes continuous image capture."},
+    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS, "Saves next image in buffer."},
+    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer."},
     {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG."},
     {NULL}
 };
@@ -52,7 +56,24 @@ static PyObject *ids_Camera_start_queue(ids_Camera *self, PyObject *args, PyObje
     return Py_True;
 }
 
-static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds) {
+    int ret = is_CaptureVideo(self->handle, IS_DONT_WAIT);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    case IS_TIMED_OUT:
+        PyErr_SetString(PyExc_IOError, "Continuous capture start timed out.");
+        return NULL;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to start continuous capture.");
+        return NULL;
+    }
+
+    Py_INCREF(Py_True);
+    return Py_True;
+}
+
+static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"filename", NULL};
     char *filename;
     wchar_t fancy_filename[256];
@@ -65,20 +86,55 @@ static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObje
     swprintf(fancy_filename, 256, L"%hs", filename);
 
     int ret;
-    ret = is_FreezeVideo(self->handle, IS_WAIT);
+    char *mem;
+    INT image_id;
+    if (self->queue) {
+        ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
+    }
+    else {
+        //ret = is_GetImageMem(self->handle, (void *) &mem);
+        char *mem_last;
+        image_id = -1;
+
+        do {
+            ret = is_GetActSeqBuf(self->handle, &image_id, &mem, &mem_last);
+            if (ret != IS_SUCCESS) {
+                PyErr_Format(PyExc_TypeError, "Fuck you %d", ret);
+            }
+        } while (ret == IS_SUCCESS && image_id <= 0);
+
+        mem = mem_last;
+    }
     switch (ret) {
     case IS_SUCCESS:
         break;
-    default:
-        PyErr_SetString(PyExc_IOError, "Failed to capture image.");
+    case IS_TIMED_OUT:
+        PyErr_SetString(PyExc_IOError, "Capture timed out on WaitForNextImage.");
         return NULL;
+    default: {
+        char buf[256];
+        sprintf(buf, "Failed to capture image on WaitForNextImage.  ret = %d", ret);
+        PyErr_SetString(PyExc_IOError, buf);
+        return NULL;
+    }
+    }
+
+    if (!self->queue) {
+        ret = is_LockSeqBuf(self->handle, image_id, mem);
+        switch (ret) {
+        case IS_SUCCESS:
+            break;
+        default:
+            PyErr_SetString(PyExc_IOError, "Failed to lock image memory.");
+            return NULL;
+        }
     }
 
     IMAGE_FILE_PARAMS ImageFileParams;
     ImageFileParams.pwchFileName = fancy_filename;
     ImageFileParams.nFileType = IS_IMG_BMP;
-    ImageFileParams.ppcImageMem = NULL;
-    ImageFileParams.pnImageID = NULL;
+    ImageFileParams.ppcImageMem = &mem;
+    ImageFileParams.pnImageID = (UINT*) &image_id;
     ret = is_ImageFile(self->handle, IS_IMAGE_FILE_CMD_SAVE, (void*)&ImageFileParams, sizeof(ImageFileParams));
     switch (ret) {
     case IS_SUCCESS:
@@ -88,23 +144,21 @@ static PyObject *ids_Camera_freeze_save(ids_Camera *self, PyObject *args, PyObje
         return NULL;
     }
 
-    Py_INCREF(Py_True);
-    return Py_True;
-}
-
-static PyObject *ids_Camera_freeze(ids_Camera *self, PyObject *args, PyObject *kwds) {
-    int ret;
-    ret = is_FreezeVideo(self->handle, IS_WAIT);
+    ret = is_UnlockSeqBuf(self->handle, image_id, mem);
     switch (ret) {
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to capture image.");
+        PyErr_SetString(PyExc_IOError, "Failed to unlock image memory.");
         return NULL;
     }
 
-#define IMG_TIMEOUT 5000
+    Py_INCREF(Py_True);
+    return Py_True;
+}
 
+static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds) {
+    int ret;
     char *mem;
     INT image_id;
     if (self->queue) {
