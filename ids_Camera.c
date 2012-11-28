@@ -65,7 +65,6 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
         self->mem = NULL;
         self->bitdepth = 0;
         self->autofeatures = 0;
-        self->queue = 0;
     }
 
     return (PyObject *) self;
@@ -106,6 +105,12 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     int width = 3840;
     int height = 2748;
     if (!alloc_ids_mem(self, width, height, nummem)) {
+        return -1;
+    }
+
+    /* Initialize image queue so we can WaitForNextImage */
+    if (is_InitImageQueue(self->handle, 0) != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Unable to start image queue.");
         return -1;
     }
 
