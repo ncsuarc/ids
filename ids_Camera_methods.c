@@ -24,7 +24,7 @@ static PyObject *create_matrix(ids_Camera *self, char *mem);
 PyMethodDef ids_Camera_methods[] = {
     {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "Closes open camera"},
     {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "Initializes continuous image capture."},
-    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS, "Saves next image in buffer and returns metadata."},
+    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "Saves next image in buffer and returns metadata."},
     {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "Returns next image in buffer and metadata."},
     {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "Save a captured image as a DNG.  Currently only supports bayer images."},
     {NULL}
@@ -58,16 +58,20 @@ static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, P
 }
 
 static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"filename", NULL};
+    static char *kwlist[] = {"filename", "filetype", NULL};
     char *filename;
     wchar_t fancy_filename[256];
+    int filetype = IS_IMG_JPG;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s", kwlist, &filename)) {
-        PyErr_SetString(PyExc_TypeError, "Filename must be a string.");
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", kwlist, &filename, &filetype)) {
         return NULL;
     }
 
     swprintf(fancy_filename, 256, L"%hs", filename);
+
+    if (filetype != IS_IMG_JPG && filetype != IS_IMG_PNG && filetype != IS_IMG_BMP) {
+        PyErr_SetString(PyExc_ValueError, "Invalid image filetype");
+    }
 
     int ret;
     char *mem;
@@ -88,7 +92,8 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
 
     IMAGE_FILE_PARAMS ImageFileParams;
     ImageFileParams.pwchFileName = fancy_filename;
-    ImageFileParams.nFileType = IS_IMG_BMP;
+    ImageFileParams.nFileType = filetype;
+    ImageFileParams.nQuality = 100;
     ImageFileParams.ppcImageMem = &mem;
     ImageFileParams.pnImageID = (UINT*) &image_id;
     ret = is_ImageFile(self->handle, IS_IMAGE_FILE_CMD_SAVE, (void*)&ImageFileParams, sizeof(ImageFileParams));
