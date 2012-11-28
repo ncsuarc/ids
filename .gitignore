@@ -2,3 +2,6 @@
 tags
 build/
 test.py
+*.bmp
+*.jpg
+*.dng
