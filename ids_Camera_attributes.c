@@ -5,6 +5,9 @@
 #include "ids.h"
 #include "intobject.h"
 
+static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure);
+static int ids_Camera_setinfo(ids_Camera *self, PyObject *value, void *closure);
+
 static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure);
 static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure);
 
@@ -36,6 +39,7 @@ static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure)
 static int ids_Camera_setcolor_correction(ids_Camera *self, PyObject *value, void *closure);
 
 PyGetSetDef ids_Camera_getseters[] = {
+    {"info", (getter) ids_Camera_getinfo, (setter) ids_Camera_setinfo, "Camera info", NULL},
     {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
@@ -48,6 +52,135 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"color_correction", (getter) ids_Camera_getcolor_correction, (setter) ids_Camera_setcolor_correction, "IR color correction factor", NULL},
     {NULL}
 };
+
+static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure) {
+    CAMINFO cam_info;
+    SENSORINFO sensor_info;
+
+    int ret = is_GetCameraInfo(self->handle, &cam_info);
+    if (ret != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Failed to retrieve camera info.");
+    }
+
+    ret = is_GetSensorInfo(self->handle, &sensor_info);
+    if (ret != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Failed to retrieve sensor info.");
+    }
+
+    PyObject *dict = PyDict_New();
+
+    PyDict_SetItemString(dict, "serial_num", PyString_FromString(cam_info.SerNo));
+    PyDict_SetItemString(dict, "manufacturer", PyString_FromString(cam_info.ID));
+    PyDict_SetItemString(dict, "hw_version", PyString_FromString(cam_info.Version));
+    PyDict_SetItemString(dict, "manufacture_date", PyString_FromString(cam_info.Date));
+    PyDict_SetItemString(dict, "id", Py_BuildValue("B", cam_info.Select));
+
+    switch (cam_info.Type) {
+    case IS_CAMERA_TYPE_UEYE_USB_SE:
+        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye SE or RE"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_USB_ME:
+        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye ME"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_USB_LE:
+        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye LE"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_USB3_CP:
+        PyDict_SetItemString(dict, "type", PyString_FromString("USB 3 uEye CP"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_ETH_HE:
+        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye HE"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_ETH_SE:
+        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye SE or RE"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_ETH_LE:
+        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye LE"));
+        break;
+    case IS_CAMERA_TYPE_UEYE_ETH_CP:
+        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye CP"));
+        break;
+    default:
+        PyDict_SetItemString(dict, "type", PyString_FromString("Unknown"));
+    }
+
+    PyDict_SetItemString(dict, "sensor_id", Py_BuildValue("H", sensor_info.SensorID));
+    PyDict_SetItemString(dict, "sensor_name", PyString_FromString(sensor_info.strSensorName));
+
+    switch (sensor_info.nColorMode) {
+    case IS_COLORMODE_BAYER:
+        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Bayer"));
+        break;
+    case IS_COLORMODE_MONOCHROME:
+        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Monochrome"));
+        break;
+    case IS_COLORMODE_CBYCRY:
+        PyDict_SetItemString(dict, "color_mode", PyString_FromString("CBYCRY"));
+        break;
+    default:
+        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Unknown"));
+    }
+
+    PyDict_SetItemString(dict, "max_width", Py_BuildValue("I", sensor_info.nMaxWidth));
+    PyDict_SetItemString(dict, "max_height", Py_BuildValue("I", sensor_info.nMaxHeight));
+
+    /* Gains */
+    if (sensor_info.bMasterGain) {
+        Py_INCREF(Py_True);
+        PyDict_SetItemString(dict, "master_gain", Py_True);
+    }
+    else {
+        Py_INCREF(Py_False);
+        PyDict_SetItemString(dict, "master_gain", Py_False);
+    }
+
+    if (sensor_info.bRGain) {
+        Py_INCREF(Py_True);
+        PyDict_SetItemString(dict, "red_gain", Py_True);
+    }
+    else {
+        Py_INCREF(Py_False);
+        PyDict_SetItemString(dict, "red_gain", Py_False);
+    }
+
+    if (sensor_info.bGGain) {
+        Py_INCREF(Py_True);
+        PyDict_SetItemString(dict, "green_gain", Py_True);
+    }
+    else {
+        Py_INCREF(Py_False);
+        PyDict_SetItemString(dict, "green_gain", Py_False);
+    }
+
+    if (sensor_info.bBGain) {
+        Py_INCREF(Py_True);
+        PyDict_SetItemString(dict, "blue_gain", Py_True);
+    }
+    else {
+        Py_INCREF(Py_False);
+        PyDict_SetItemString(dict, "blue_gain", Py_False);
+    }
+
+    /* Global shutter, rolling if false */
+    if (sensor_info.bGlobShutter) {
+        Py_INCREF(Py_True);
+        PyDict_SetItemString(dict, "global_shutter", Py_True);
+    }
+    else {
+        Py_INCREF(Py_False);
+        PyDict_SetItemString(dict, "global_shutter", Py_False);
+    }
+
+    /* Pixel size in um */
+    PyDict_SetItemString(dict, "pixel_size", Py_BuildValue("d", sensor_info.wPixelSize/100.0));
+
+    return dict;
+}
+
+static int ids_Camera_setinfo(ids_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_TypeError, "Camera info is static and cannot be changed");
+    return -1;
+}
 
 static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure) {
     return PyInt_FromLong(self->width);
