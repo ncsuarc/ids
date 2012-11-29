@@ -2,6 +2,7 @@
 #include <structmember.h>
 #include <ueye.h>
 #include <wchar.h>
+#include <stdio.h>
 
 #define PY_ARRAY_UNIQUE_SYMBOL  ids_ARRAY_API
 #define NO_IMPORT_ARRAY
@@ -77,6 +78,7 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
     char *mem;
     INT image_id;
 
+retry:
     ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
 
     switch (ret) {
@@ -85,6 +87,23 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
     case IS_TIMED_OUT:
         PyErr_SetString(PyExc_IOError, "Capture timed out on WaitForNextImage.");
         return NULL;
+    case IS_CAPTURE_STATUS: {
+        UEYE_CAPTURE_STATUS_INFO capture_status;
+        int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
+        if (r == IS_SUCCESS) {
+            if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]) {
+                printf("Warning: out of memory locations for images, retrying. ");
+            }
+            else {
+                printf("Warning: Capture Status. ");
+            }
+        }
+        else {
+            printf("Warning: Capture Status. ");
+        }
+
+        goto retry;
+    }
     default:
         PyErr_Format(PyExc_IOError,  "Failed to capture image on WaitForNextImage.  ret = %d", ret);
         return NULL;
