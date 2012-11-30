@@ -95,11 +95,12 @@ retry:
                 printf("Warning: out of memory locations for images, retrying. ");
             }
             else {
-                printf("Warning: Capture Status. ");
+                printf("Warning: Capture Status, total: %d. ", capture_status.dwCapStatusCnt_Total);
+                printf("NO_DEST_MEM: %d, CONVT_FAILED: %d, IMAGE_LOCKED: %d, OUT_OF_BUFFERS: %d, DEVICE_NOT_RDY: %d, TRANSF_FAILED: %d, TIMEOUT: %d, BUFFER_OVRRUN: %d, MISSED_IMGS: %d. ", capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
             }
         }
         else {
-            printf("Warning: Capture Status. ");
+            printf("Warning: Capture Status failed. ");
         }
 
         goto retry;
