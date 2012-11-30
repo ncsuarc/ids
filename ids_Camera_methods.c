@@ -58,6 +58,48 @@ static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, P
     return Py_True;
 }
 
+static void warn_capture_status(ids_Camera *self) {
+    UEYE_CAPTURE_STATUS_INFO capture_status;
+    int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
+    if (r == IS_SUCCESS) {
+        if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]) {
+            printf("Warning: out of memory locations for images, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED]) {
+            printf("Warning: image conversion failed, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED]) {
+            printf("Warning: destination buffer locked, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS]) {
+            printf("Warning: no internal memory available, image lost, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY]) {
+            printf("Warning: camera not available, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED]) {
+            printf("Warning: transfer failed, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT]) {
+            printf("Warning: camera timed out, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN]) {
+            printf("Warning: camera buffer overflow, retrying. ");
+        }
+        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]) {
+            printf("Warning: missed %d image(s), retrying. ", capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
+        }
+        else {
+            printf("Warning: Capture Status, total: %d. ", capture_status.dwCapStatusCnt_Total);
+        }
+
+        is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_RESET, NULL, 0);
+    }
+    else {
+        printf("Warning: Capture Status failed. ");
+    }
+}
+
 static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"filename", "filetype", NULL};
     char *filename;
@@ -88,21 +130,7 @@ retry:
         PyErr_SetString(PyExc_IOError, "Capture timed out on WaitForNextImage.");
         return NULL;
     case IS_CAPTURE_STATUS: {
-        UEYE_CAPTURE_STATUS_INFO capture_status;
-        int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
-        if (r == IS_SUCCESS) {
-            if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]) {
-                printf("Warning: out of memory locations for images, retrying. ");
-            }
-            else {
-                printf("Warning: Capture Status, total: %d. ", capture_status.dwCapStatusCnt_Total);
-                printf("NO_DEST_MEM: %d, CONVT_FAILED: %d, IMAGE_LOCKED: %d, OUT_OF_BUFFERS: %d, DEVICE_NOT_RDY: %d, TRANSF_FAILED: %d, TIMEOUT: %d, BUFFER_OVRRUN: %d, MISSED_IMGS: %d. ", capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN], capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
-            }
-        }
-        else {
-            printf("Warning: Capture Status failed. ");
-        }
-
+        warn_capture_status(self);
         goto retry;
     }
     default:
@@ -147,6 +175,7 @@ static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwd
     char *mem;
     INT image_id;
 
+retry:
     ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
 
     switch (ret) {
@@ -155,6 +184,9 @@ static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwd
     case IS_TIMED_OUT:
         PyErr_SetString(PyExc_IOError, "Capture timed out.");
         return NULL;
+    case IS_CAPTURE_STATUS:
+        warn_capture_status(self);
+        goto retry;
     default:
         PyErr_SetString(PyExc_IOError, "Failed to capture image.");
         return NULL;
