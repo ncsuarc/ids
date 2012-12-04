@@ -127,8 +127,8 @@ retry:
     case IS_SUCCESS:
         break;
     case IS_TIMED_OUT:
-        PyErr_SetString(PyExc_IOError, "Capture timed out on WaitForNextImage.");
-        return NULL;
+        printf("Warning: Capture timed out, retrying. ");
+        goto retry;
     case IS_CAPTURE_STATUS: {
         warn_capture_status(self);
         goto retry;
@@ -182,8 +182,8 @@ retry:
     case IS_SUCCESS:
         break;
     case IS_TIMED_OUT:
-        PyErr_SetString(PyExc_IOError, "Capture timed out.");
-        return NULL;
+        printf("Warning: Capture timed out, retrying. ");
+        goto retry;
     case IS_CAPTURE_STATUS:
         warn_capture_status(self);
         goto retry;
