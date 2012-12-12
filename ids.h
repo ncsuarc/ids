@@ -21,6 +21,7 @@ typedef struct {
     /* Internal structures */
     struct allocated_mem    *mem;
     int                     bitdepth;
+    int                     color;
     int                     autofeatures;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
 

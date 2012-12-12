@@ -13,6 +13,9 @@ int color_to_bitdepth(int color) {
     case IS_CM_MONO12:
     case IS_CM_MONO16:
         return 16;
+    case IS_CM_BGR8_PACKED:
+    case IS_CM_RGB8_PACKED:
+        return 24;
     default:
         return 32;
     }

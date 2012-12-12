@@ -18,7 +18,7 @@ static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kw
 static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject *kwds);
 
 static PyObject *create_matrix(ids_Camera *self, char *mem);
 
@@ -27,7 +27,7 @@ PyMethodDef ids_Camera_methods[] = {
     {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "start_continuous()\n\nInitializes continuous image capture."},
     {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
     {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},
-    {"save_dng", (PyCFunction) ids_Camera_save_dng, METH_VARARGS, "save_dng(image, filename)\n\nSave a captured image as a DNG.  Image must be a numpy array,\nand is expected to be one returned from next().\nCurrently only supports bayer images."},
+    {"save_tiff", (PyCFunction) ids_Camera_save_tiff, METH_VARARGS, "save_tiff(image, filename)\n\nSave a captured image as a tiff.  Image must be a numpy array,\nand is expected to be one returned from next().\nIf the color mode is currently bayer, the image will be saved as a RAW DNG\n, a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n Non bayer images must be ids.COLOR_RGB8 or ids.COLOR_MONO*."},
     {NULL}
 };
 
@@ -241,11 +241,13 @@ static PyObject *create_matrix(ids_Camera *self, char *mem) {
     case IS_CM_BGRA8_PACKED:
     case IS_CM_BGRY8_PACKED:
     case IS_CM_RGBA8_PACKED:
-    case IS_CM_RGBY8_PACKED: {
+    case IS_CM_RGBY8_PACKED: 
+    case IS_CM_BGR8_PACKED:
+    case IS_CM_RGB8_PACKED: {
         npy_intp dims[3];
         dims[0] = self->height;
         dims[1] = self->width;
-        dims[2] = 4;
+        dims[2] = self->bitdepth/8;
 
         matrix = (PyArrayObject*)PyArray_SimpleNew(3, dims, NPY_UINT8);
         memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
@@ -259,7 +261,7 @@ static PyObject *create_matrix(ids_Camera *self, char *mem) {
     return (PyObject*)matrix;
 }
 
-static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"image", "filename", NULL};
     PyArrayObject* matrix;
     char *filename;
@@ -279,14 +281,36 @@ static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject 
         return NULL;
     }
 
+    int dng = 0;
+    int samples_per_pixel = 1;
+    int photometric = PHOTOMETRIC_CFA;
+
+    switch (self->color) {
+    case IS_CM_BAYER_RG8:
+    case IS_CM_BAYER_RG12:
+    case IS_CM_BAYER_RG16:
+	dng = 1;
+	samples_per_pixel = 1;
+	photometric = PHOTOMETRIC_CFA;
+	break;
+    case IS_CM_MONO8:
+    case IS_CM_MONO12:
+    case IS_CM_MONO16:
+	dng = 0;
+	samples_per_pixel = 1;
+	photometric = PHOTOMETRIC_MINISBLACK;
+	break;
+    case IS_CM_RGB8_PACKED:
+	dng = 0;
+	samples_per_pixel = 3;
+	photometric = PHOTOMETRIC_RGB;
+	break;
+    default:
+	PyErr_SetString(PyExc_ValueError, "Unsupported color format for tiff conversion.");
+	return NULL;
+    }
+
     char *mem = PyArray_BYTES(matrix);
-
-    short cfapatterndim[] = {2,2};
-    char  cfapattern[] = {0,1,1,2};
-
-    /* Not for our camera! */
-    static const float cam_xyz[] =
-    { 2.005,-0.771,-0.269, -0.752,1.688,0.064, -0.149,0.283,0.745 };
 
     TIFF *file = NULL;
 
@@ -299,19 +323,29 @@ static PyObject *ids_Camera_save_dng(ids_Camera *self, PyObject *args, PyObject 
 
     TIFFSetField(file, TIFFTAG_IMAGEWIDTH, self->width);
     TIFFSetField(file, TIFFTAG_IMAGELENGTH, self->height);
-    TIFFSetField(file, TIFFTAG_BITSPERSAMPLE, self->bitdepth);
-    TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
-    TIFFSetField(file, TIFFTAG_CFAPATTERN, cfapattern);
-    TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
     TIFFSetField(file, TIFFTAG_UNIQUECAMERAMODEL, "IDS UI549xSE-C");
 
-    TIFFSetField(file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_CFA);
     TIFFSetField(file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-    TIFFSetField(file, TIFFTAG_SUBFILETYPE, 0);
-    TIFFSetField(file, TIFFTAG_SAMPLESPERPIXEL, 1);
     TIFFSetField(file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-    TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
-    TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
+    TIFFSetField(file, TIFFTAG_SUBFILETYPE, 0);
+
+    TIFFSetField(file, TIFFTAG_BITSPERSAMPLE, self->bitdepth/samples_per_pixel);
+    TIFFSetField(file, TIFFTAG_SAMPLESPERPIXEL, samples_per_pixel);
+    TIFFSetField(file, TIFFTAG_PHOTOMETRIC, photometric);
+
+    /* If we are saving bayer data, this will be a DNG */
+    if (dng) {
+	short cfapatterndim[] = {2,2};
+	char  cfapattern[] = {0,1,1,2}; /* BGGR */
+	const float cam_xyz[9] = /* Not for our camera! */
+	{ 2.005,-0.771,-0.269,-0.752,1.688,0.064,-0.149,0.283,0.745 };
+
+	TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
+	TIFFSetField(file, TIFFTAG_CFAPATTERN, cfapattern);
+	TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
+	TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
+	TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
+    }
 
     for (int row = 0; row < self->height; row++) {
         if (TIFFWriteScanline(file, mem, row, 0) < 0) {
