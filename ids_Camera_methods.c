@@ -289,25 +289,25 @@ static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject
     case IS_CM_BAYER_RG8:
     case IS_CM_BAYER_RG12:
     case IS_CM_BAYER_RG16:
-	dng = 1;
-	samples_per_pixel = 1;
-	photometric = PHOTOMETRIC_CFA;
-	break;
+        dng = 1;
+        samples_per_pixel = 1;
+        photometric = PHOTOMETRIC_CFA;
+        break;
     case IS_CM_MONO8:
     case IS_CM_MONO12:
     case IS_CM_MONO16:
-	dng = 0;
-	samples_per_pixel = 1;
-	photometric = PHOTOMETRIC_MINISBLACK;
-	break;
+        dng = 0;
+        samples_per_pixel = 1;
+        photometric = PHOTOMETRIC_MINISBLACK;
+        break;
     case IS_CM_RGB8_PACKED:
-	dng = 0;
-	samples_per_pixel = 3;
-	photometric = PHOTOMETRIC_RGB;
-	break;
+        dng = 0;
+        samples_per_pixel = 3;
+        photometric = PHOTOMETRIC_RGB;
+        break;
     default:
-	PyErr_SetString(PyExc_ValueError, "Unsupported color format for tiff conversion.");
-	return NULL;
+        PyErr_SetString(PyExc_ValueError, "Unsupported color format for tiff conversion.");
+        return NULL;
     }
 
     char *mem = PyArray_BYTES(matrix);
@@ -335,16 +335,16 @@ static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject
 
     /* If we are saving bayer data, this will be a DNG */
     if (dng) {
-	short cfapatterndim[] = {2,2};
-	char  cfapattern[] = {0,1,1,2}; /* BGGR */
-	const float cam_xyz[9] = /* Not for our camera! */
-	{ 2.005,-0.771,-0.269,-0.752,1.688,0.064,-0.149,0.283,0.745 };
+        short cfapatterndim[] = {2,2};
+        char  cfapattern[] = {0,1,1,2}; /* BGGR */
+        const float cam_xyz[9] = /* Not for our camera! */
+        { 2.005,-0.771,-0.269,-0.752,1.688,0.064,-0.149,0.283,0.745 };
 
-	TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
-	TIFFSetField(file, TIFFTAG_CFAPATTERN, cfapattern);
-	TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
-	TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
-	TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
+        TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
+        TIFFSetField(file, TIFFTAG_CFAPATTERN, cfapattern);
+        TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
+        TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
+        TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
     }
 
     for (int row = 0; row < self->height; row++) {
