@@ -211,7 +211,13 @@ retry:
         return NULL;
     }
 
-    return Py_BuildValue("(OO)", image, info);
+    PyObject *tuple = Py_BuildValue("(OO)", image, info);
+
+    /* BuildValue INCREF's these objects, but we don't need them anymore */
+    Py_DECREF(image);
+    Py_DECREF(info);
+
+    return tuple;
 }
 
 static PyObject *create_matrix(ids_Camera *self, char *mem) {
