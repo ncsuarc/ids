@@ -225,7 +225,7 @@ static PyObject *create_matrix(ids_Camera *self, char *mem) {
     PyArrayObject* matrix;
 
     switch (color) {
-    case IS_CM_BAYER_RG8: {
+    case IS_CM_SENSOR_RAW8: {
         npy_intp dims[2];
         dims[0] = self->height;
         dims[1] = self->width;
@@ -234,8 +234,8 @@ static PyObject *create_matrix(ids_Camera *self, char *mem) {
         memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
         break; 
     }
-    case IS_CM_BAYER_RG12: /* You need to left shift the output by 4 bits */
-    case IS_CM_BAYER_RG16: {
+    case IS_CM_SENSOR_RAW12: /* You need to left shift the output by 4 bits */
+    case IS_CM_SENSOR_RAW16: {
         npy_intp dims[2];
         dims[0] = self->height;
         dims[1] = self->width;
@@ -292,9 +292,9 @@ static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject
     int photometric = PHOTOMETRIC_CFA;
 
     switch (self->color) {
-    case IS_CM_BAYER_RG8:
-    case IS_CM_BAYER_RG12:
-    case IS_CM_BAYER_RG16:
+    case IS_CM_SENSOR_RAW8:
+    case IS_CM_SENSOR_RAW12:
+    case IS_CM_SENSOR_RAW16:
         dng = 1;
         samples_per_pixel = 1;
         photometric = PHOTOMETRIC_CFA;

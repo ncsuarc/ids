@@ -5,11 +5,11 @@
 
 int color_to_bitdepth(int color) {
     switch (color) {
-    case IS_CM_BAYER_RG8:
+    case IS_CM_SENSOR_RAW8:
     case IS_CM_MONO8:
         return 8;
-    case IS_CM_BAYER_RG12:
-    case IS_CM_BAYER_RG16:
+    case IS_CM_SENSOR_RAW12:
+    case IS_CM_SENSOR_RAW16:
     case IS_CM_MONO12:
     case IS_CM_MONO16:
         return 16;
