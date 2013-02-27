@@ -98,9 +98,18 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
         return -1;
     }
 
-    /* TODO: Add (more) error checking */
-    if (is_InitCamera(&self->handle, NULL) != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Unable to open camera.");
+    int ret = is_InitCamera(&self->handle, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    case IS_CANT_OPEN_DEVICE:
+        PyErr_SetString(PyExc_IOError, "Unable to open camera. Camera not connected.");
+        return -1;
+    case IS_INVALID_HANDLE:
+        PyErr_SetString(PyExc_IOError, "Unable to open camera. Invalid camera handle.");
+        return -1;
+    default:
+        PyErr_Format(PyExc_IOError, "Unable to open camera (Error %d).", ret);
         return -1;
     }
 
