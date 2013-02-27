@@ -12,7 +12,7 @@
 
 #include "ids.h"
 
-#define IMG_TIMEOUT 5000
+#define IMG_TIMEOUT 3000
 
 static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds);
