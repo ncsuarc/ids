@@ -13,6 +13,7 @@
 #include "ids.h"
 
 #define IMG_TIMEOUT 3000
+#define NUM_TRIES 5
 
 static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
 static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds);
@@ -101,6 +102,41 @@ static void warn_capture_status(ids_Camera *self) {
     fflush(stdout);
 }
 
+/* Gets next image with is_WaitForNextImage().
+ * Returns zero on success, non-zero on failure,
+ * with exception set. */
+static int get_next_image(ids_Camera *self, char **mem, INT *image_id) {
+    int ret;
+    int tries = 0;
+
+retry:
+    tries++;
+    ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, mem, image_id); 
+
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    case IS_TIMED_OUT:
+        printf("Warning: Capture timed out, retrying. ");
+        fflush(stdout);
+        if (tries < NUM_TRIES)
+            goto retry;
+        else {
+            PyErr_SetString(PyExc_IOError, "Too many timeout retries.");
+            return 1;
+        }
+    case IS_CAPTURE_STATUS: {
+        warn_capture_status(self);
+        goto retry;
+    }
+    default:
+        PyErr_Format(PyExc_IOError,  "Failed to capture image on WaitForNextImage.  ret = %d", ret);
+        return 1;
+    }
+
+    return 0;
+}
+
 static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"filename", "filetype", NULL};
     char *filename;
@@ -121,22 +157,9 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
     char *mem;
     INT image_id;
 
-retry:
-    ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
-
-    switch (ret) {
-    case IS_SUCCESS:
-        break;
-    case IS_TIMED_OUT:
-        printf("Warning: Capture timed out, retrying. ");
-        fflush(stdout);
-        goto retry;
-    case IS_CAPTURE_STATUS: {
-        warn_capture_status(self);
-        goto retry;
-    }
-    default:
-        PyErr_Format(PyExc_IOError,  "Failed to capture image on WaitForNextImage.  ret = %d", ret);
+    ret = get_next_image(self, &mem, &image_id);
+    if (ret) {
+        /* Exception set, return */
         return NULL;
     }
 
@@ -177,21 +200,9 @@ static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwd
     char *mem;
     INT image_id;
 
-retry:
-    ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, &mem, &image_id); 
-
-    switch (ret) {
-    case IS_SUCCESS:
-        break;
-    case IS_TIMED_OUT:
-        printf("Warning: Capture timed out, retrying. ");
-        fflush(stdout);
-        goto retry;
-    case IS_CAPTURE_STATUS:
-        warn_capture_status(self);
-        goto retry;
-    default:
-        PyErr_SetString(PyExc_IOError, "Failed to capture image.");
+    ret = get_next_image(self, &mem, &image_id);
+    if (ret) {
+        /* Exception set, return */
         return NULL;
     }
 
