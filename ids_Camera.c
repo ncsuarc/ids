@@ -64,7 +64,7 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
     self = (ids_Camera *) type->tp_alloc(type, 0);
 
     if (self != NULL) {
-        self->handle = -1;
+        self->handle = 0;
         self->width = 0;
         self->height = 0;
         self->color = 0;
