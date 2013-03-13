@@ -98,6 +98,7 @@ static void warn_capture_status(ids_Camera *self) {
     else {
         printf("Warning: Capture Status failed. ");
     }
+    fflush(stdout);
 }
 
 static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
@@ -128,6 +129,7 @@ retry:
         break;
     case IS_TIMED_OUT:
         printf("Warning: Capture timed out, retrying. ");
+        fflush(stdout);
         goto retry;
     case IS_CAPTURE_STATUS: {
         warn_capture_status(self);
@@ -183,6 +185,7 @@ retry:
         break;
     case IS_TIMED_OUT:
         printf("Warning: Capture timed out, retrying. ");
+        fflush(stdout);
         goto retry;
     case IS_CAPTURE_STATUS:
         warn_capture_status(self);
