@@ -41,6 +41,8 @@ void free_all_ids_mem(ids_Camera *self) {
     struct allocated_mem *prev = self->mem;
     struct allocated_mem *curr = self->mem;
 
+    is_ClearSequence(self->handle);
+
     while (curr) {
         prev = curr;
         curr = curr->next;

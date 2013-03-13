@@ -23,7 +23,15 @@ typedef struct {
     int                     bitdepth;
     int                     color;
     int                     autofeatures;
+    int                     ready;
 } ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
+
+enum ready {
+    NOT_READY,
+    CONNECTED,
+    ALLOCATED_MEM,
+    READY,
+};
 
 void add_constants(PyObject *m);
 PyObject *set_color_mode(ids_Camera *self, int color);

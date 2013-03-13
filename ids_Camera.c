@@ -71,16 +71,23 @@ static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kw
         self->mem = NULL;
         self->bitdepth = 0;
         self->autofeatures = 0;
+        self->ready = NOT_READY;
     }
 
     return (PyObject *) self;
 }
 
 static void ids_Camera_dealloc(ids_Camera *self) {
-    free_all_ids_mem(self);
-
-    /* Attempt to close camera */
-    is_ExitCamera(self->handle);
+    /* Use ready flag to determine state of readiness to deallocate */
+    switch (self->ready) {
+    case READY:
+        is_ExitImageQueue(self->handle);
+    case ALLOCATED_MEM:
+        free_all_ids_mem(self);
+    case CONNECTED:
+        /* Attempt to close camera */
+        is_ExitCamera(self->handle);
+    }
 
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
@@ -92,6 +99,7 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     self->handle = 0;
     self->width = 3840;
     self->height = 2748;
+    self->ready = NOT_READY;
 
     /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids.COLOR_BGA8): */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iIi", kwlist, &self->handle, &nummem, &self->color)) {
@@ -113,6 +121,8 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
         return -1;
     }
 
+    self->ready = CONNECTED;
+
     if (!set_color_mode(self, self->color)) {
         return -1;
     }
@@ -123,11 +133,15 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
         return -1;
     }
 
+    self->ready = ALLOCATED_MEM;
+
     /* Initialize image queue so we can WaitForNextImage */
     if (is_InitImageQueue(self->handle, 0) != IS_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Unable to start image queue.");
         return -1;
     }
+
+    self->ready = READY;
 
     return 0;
 }
