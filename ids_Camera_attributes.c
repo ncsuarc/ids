@@ -69,56 +69,56 @@ static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure) {
 
     PyObject *dict = PyDict_New();
 
-    PyDict_SetItemString(dict, "serial_num", PyString_FromString(cam_info.SerNo));
-    PyDict_SetItemString(dict, "manufacturer", PyString_FromString(cam_info.ID));
-    PyDict_SetItemString(dict, "hw_version", PyString_FromString(cam_info.Version));
-    PyDict_SetItemString(dict, "manufacture_date", PyString_FromString(cam_info.Date));
+    PyDict_SetItemString(dict, "serial_num", PyBytes_FromString(cam_info.SerNo));
+    PyDict_SetItemString(dict, "manufacturer", PyBytes_FromString(cam_info.ID));
+    PyDict_SetItemString(dict, "hw_version", PyBytes_FromString(cam_info.Version));
+    PyDict_SetItemString(dict, "manufacture_date", PyBytes_FromString(cam_info.Date));
     PyDict_SetItemString(dict, "id", Py_BuildValue("B", cam_info.Select));
 
     switch (cam_info.Type) {
     case IS_CAMERA_TYPE_UEYE_USB_SE:
-        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye SE or RE"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye SE or RE"));
         break;
     case IS_CAMERA_TYPE_UEYE_USB_ME:
-        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye ME"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye ME"));
         break;
     case IS_CAMERA_TYPE_UEYE_USB_LE:
-        PyDict_SetItemString(dict, "type", PyString_FromString("USB uEye LE"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye LE"));
         break;
     case IS_CAMERA_TYPE_UEYE_USB3_CP:
-        PyDict_SetItemString(dict, "type", PyString_FromString("USB 3 uEye CP"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB 3 uEye CP"));
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_HE:
-        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye HE"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye HE"));
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_SE:
-        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye SE or RE"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye SE or RE"));
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_LE:
-        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye LE"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye LE"));
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_CP:
-        PyDict_SetItemString(dict, "type", PyString_FromString("GigE uEye CP"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye CP"));
         break;
     default:
-        PyDict_SetItemString(dict, "type", PyString_FromString("Unknown"));
+        PyDict_SetItemString(dict, "type", PyBytes_FromString("Unknown"));
     }
 
     PyDict_SetItemString(dict, "sensor_id", Py_BuildValue("H", sensor_info.SensorID));
-    PyDict_SetItemString(dict, "sensor_name", PyString_FromString(sensor_info.strSensorName));
+    PyDict_SetItemString(dict, "sensor_name", PyBytes_FromString(sensor_info.strSensorName));
 
     switch (sensor_info.nColorMode) {
     case IS_COLORMODE_BAYER:
-        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Bayer"));
+        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Bayer"));
         break;
     case IS_COLORMODE_MONOCHROME:
-        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Monochrome"));
+        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Monochrome"));
         break;
     case IS_COLORMODE_CBYCRY:
-        PyDict_SetItemString(dict, "color_mode", PyString_FromString("CBYCRY"));
+        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("CBYCRY"));
         break;
     default:
-        PyDict_SetItemString(dict, "color_mode", PyString_FromString("Unknown"));
+        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Unknown"));
     }
 
     PyDict_SetItemString(dict, "max_width", Py_BuildValue("I", sensor_info.nMaxWidth));
@@ -503,7 +503,7 @@ static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closur
         return Py_True;
     }
     else if (val || val2) {
-        PyErr_SetString(PyExc_StandardError, "Only one white balance setting is enabled.  It may or may not work.");
+        PyErr_SetString(PyExc_RuntimeError, "Only one white balance setting is enabled.  It may or may not work.");
         return NULL;
     }
     else {
