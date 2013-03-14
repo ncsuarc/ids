@@ -18,7 +18,7 @@ module = Extension("ids",
                    ])
 
 setup (name = 'ids',
-       version = '0.1',
+       version = '0.9',
        description = 'Wrapper for IDS ueye library',
        author = 'Michael Pratt',
        ext_modules = [module])
