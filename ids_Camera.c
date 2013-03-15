@@ -4,7 +4,6 @@
 
 #include "ids.h"
 
-static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void ids_Camera_dealloc(ids_Camera *self);
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds);
 
@@ -55,27 +54,8 @@ PyTypeObject ids_CameraType = {
     0,                         /* tp_dictoffset */
     (initproc)ids_Camera_init, /* tp_init */
     0,                         /* tp_alloc */
-    ids_Camera_new,            /* tp_new */
+    0,                         /* tp_new */
 };
-
-static PyObject *ids_Camera_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    ids_Camera *self;
-
-    self = (ids_Camera *) type->tp_alloc(type, 0);
-
-    if (self != NULL) {
-        self->handle = 0;
-        self->width = 0;
-        self->height = 0;
-        self->color = 0;
-        self->mem = NULL;
-        self->bitdepth = 0;
-        self->autofeatures = 0;
-        self->ready = NOT_READY;
-    }
-
-    return (PyObject *) self;
-}
 
 static void ids_Camera_dealloc(ids_Camera *self) {
     /* Use ready flag to determine state of readiness to deallocate */
@@ -95,10 +75,13 @@ static void ids_Camera_dealloc(ids_Camera *self) {
 static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"handle", "nummem", "color", NULL};
     uint32_t nummem = 3;
-    self->color = IS_CM_BGRA8_PACKED;
     self->handle = 0;
     self->width = 3840;
     self->height = 2748;
+    self->mem = NULL;
+    self->bitdepth = 0;
+    self->color = IS_CM_BGRA8_PACKED;
+    self->autofeatures = 0;
     self->ready = NOT_READY;
 
     /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids.COLOR_BGA8): */
