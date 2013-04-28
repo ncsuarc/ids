@@ -29,6 +29,9 @@ static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closu
 static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure);
 static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure);
 
+static PyObject *ids_Camera_getauto_exposure_brightness(ids_Camera *self, void *closure);
+static int ids_Camera_setauto_exposure_brightness(ids_Camera *self, PyObject *value, void *closure);
+
 static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure);
 static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure);
 
@@ -47,6 +50,7 @@ PyGetSetDef ids_Camera_getseters[] = {
     {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
+    {"auto_exposure_brightness", (getter) ids_Camera_getauto_exposure_brightness, (setter) ids_Camera_setauto_exposure_brightness, "Auto exposure reference brightness (0 to 1)", NULL},
     {"auto_speed", (getter) ids_Camera_getauto_speed, (setter) ids_Camera_setauto_speed, "Auto speed", NULL},
     {"auto_white_balance", (getter) ids_Camera_getauto_white_balance, (setter) ids_Camera_setauto_white_balance, "Auto White Balance", NULL},
     {"color_correction", (getter) ids_Camera_getcolor_correction, (setter) ids_Camera_setcolor_correction, "IR color correction factor", NULL},
@@ -422,6 +426,62 @@ static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *
         return 0;
     default:
         PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        return -1;
+    }
+
+    return -1;
+}
+
+static PyObject *ids_Camera_getauto_exposure_brightness(ids_Camera *self, void *closure) {
+    double val;
+    int ret;
+
+    ret = is_SetAutoParameter(self->handle, IS_GET_AUTO_REFERENCE, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Failed to get auto exposure brightness setting.");
+        return NULL;
+    }
+
+    /* Value is 0..255, return proportion */
+    return PyFloat_FromDouble(val/255);
+}
+
+static int ids_Camera_setauto_exposure_brightness(ids_Camera *self, PyObject *value, void *closure) {
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure_brightness'");
+        return -1;
+    }
+
+    PyObject *flt = PyNumber_Float(value);
+    if (flt == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Value must be a number");
+        Py_DECREF(value);
+        return -1;
+    }
+
+    double val = PyFloat_AsDouble(value);
+    Py_DECREF(value);
+
+    if (val < 0 || val > 1) {
+        PyErr_SetString(PyExc_ValueError, "Value must be between 0 and 1");
+        return -1;
+    }
+
+    /* Value is 0..255, extract from proportion */
+    val = val * 255;
+
+    int ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_REFERENCE, &val, NULL);
+    switch (ret) {
+    case IS_SUCCESS:
+        return 0;
+    case IS_INVALID_PARAMETER:
+        PyErr_SetString(PyExc_ValueError, "Auto exposure brightness out of range");
+        break;
+    default:
+        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure brightness");
         return -1;
     }
 
