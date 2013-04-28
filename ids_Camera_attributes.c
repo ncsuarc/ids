@@ -446,13 +446,13 @@ static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure) {
 
 static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure'");
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_speed'");
         return -1;
     }
 
     PyObject *flt = PyNumber_Float(value);
     if (flt == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
+        PyErr_SetString(PyExc_TypeError, "Value must be a number");
         Py_DECREF(value);
         return -1;
     }
