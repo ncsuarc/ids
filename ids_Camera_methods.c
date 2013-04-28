@@ -234,6 +234,7 @@ static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwd
     return tuple;
 }
 
+/* Create NumPy array for image in mem, and copy image data into it */
 static PyObject *create_matrix(ids_Camera *self, char *mem) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
     PyArrayObject* matrix;
