@@ -1,0 +1,6 @@
+A library for interfacing with IDS Imaging cameras
+
+Tested on uEye version 4.20, should work on version 4.0+
+
+Supports Python 2 and 3.  To build and install:
+    python setup.py install
