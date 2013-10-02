@@ -31,35 +31,35 @@
 #include <wchar.h>
 #include <stdio.h>
 
-#define PY_ARRAY_UNIQUE_SYMBOL  ids_ARRAY_API
+#define PY_ARRAY_UNIQUE_SYMBOL  ids_core_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 
 #include "tiffio.h"
 
-#include "ids.h"
+#include "ids_core.h"
 
 #define IMG_TIMEOUT 3000
 #define NUM_TRIES 5
 
-static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds);
-static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyObject *kwds);
+static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args, PyObject *kwds);
 
-static PyObject *create_matrix(ids_Camera *self, char *mem);
+static PyObject *create_matrix(ids_core_Camera *self, char *mem);
 
-PyMethodDef ids_Camera_methods[] = {
-    {"close", (PyCFunction) ids_Camera_close, METH_VARARGS, "close()\n\nCloses open camera"},
-    {"start_continuous", (PyCFunction) ids_Camera_start_continuous, METH_VARARGS, "start_continuous()\n\nInitializes continuous image capture."},
-    {"next_save", (PyCFunction) ids_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
-    {"next", (PyCFunction) ids_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},
-    {"save_tiff", (PyCFunction) ids_Camera_save_tiff, METH_VARARGS, "save_tiff(image, filename)\n\nSave a captured image as a tiff.  Image must be a numpy array,\nand is expected to be one returned from next().\nIf the color mode is currently bayer, the image will be saved as a RAW DNG\n, a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n Non bayer images must be ids.COLOR_RGB8 or ids.COLOR_MONO*."},
+PyMethodDef ids_core_Camera_methods[] = {
+    {"close", (PyCFunction) ids_core_Camera_close, METH_VARARGS, "close()\n\nCloses open camera"},
+    {"start_continuous", (PyCFunction) ids_core_Camera_start_continuous, METH_VARARGS, "start_continuous()\n\nInitializes continuous image capture."},
+    {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
+    {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},
+    {"save_tiff", (PyCFunction) ids_core_Camera_save_tiff, METH_VARARGS, "save_tiff(image, filename)\n\nSave a captured image as a tiff.  Image must be a numpy array,\nand is expected to be one returned from next().\nIf the color mode is currently bayer, the image will be saved as a RAW DNG\n, a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n Non bayer images must be ids_core.COLOR_RGB8 or ids_core.COLOR_MONO*."},
     {NULL}
 };
 
-static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     if (is_ExitCamera(self->handle) != IS_SUCCESS) {
         Py_INCREF(Py_False);
         return Py_False;
@@ -69,7 +69,7 @@ static PyObject *ids_Camera_close(ids_Camera *self, PyObject *args, PyObject *kw
     return Py_True;
 }
 
-static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     int ret = is_CaptureVideo(self->handle, IS_DONT_WAIT);
     switch (ret) {
     case IS_SUCCESS:
@@ -86,7 +86,7 @@ static PyObject *ids_Camera_start_continuous(ids_Camera *self, PyObject *args, P
     return Py_True;
 }
 
-static void warn_capture_status(ids_Camera *self) {
+static void warn_capture_status(ids_core_Camera *self) {
     UEYE_CAPTURE_STATUS_INFO capture_status;
     int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
     if (r == IS_SUCCESS) {
@@ -132,7 +132,7 @@ static void warn_capture_status(ids_Camera *self) {
 /* Gets next image with is_WaitForNextImage().
  * Returns zero on success, non-zero on failure,
  * with exception set. */
-static int get_next_image(ids_Camera *self, char **mem, INT *image_id) {
+static int get_next_image(ids_core_Camera *self, char **mem, INT *image_id) {
     int ret;
     int tries = 0;
 
@@ -164,7 +164,7 @@ retry:
     return 0;
 }
 
-static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"filename", "filetype", NULL};
     char *filename;
     wchar_t fancy_filename[256];
@@ -222,7 +222,7 @@ static PyObject *ids_Camera_next_save(ids_Camera *self, PyObject *args, PyObject
     return info;
 }
 
-static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     int ret;
     char *mem;
     INT image_id;
@@ -262,7 +262,7 @@ static PyObject *ids_Camera_next(ids_Camera *self, PyObject *args, PyObject *kwd
 }
 
 /* Create NumPy array for image in mem, and copy image data into it */
-static PyObject *create_matrix(ids_Camera *self, char *mem) {
+static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
     PyArrayObject* matrix;
 
@@ -309,7 +309,7 @@ static PyObject *create_matrix(ids_Camera *self, char *mem) {
     return (PyObject*)matrix;
 }
 
-static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"image", "filename", NULL};
     PyArrayObject* matrix;
     char *filename;

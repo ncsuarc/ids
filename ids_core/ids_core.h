@@ -2,7 +2,7 @@
 #define IDS_H_INCLUDED
 
 /* Module methods */
-extern PyMethodDef idsMethods[];
+extern PyMethodDef ids_coreMethods[];
 
 /* IDS data structures */
 struct allocated_mem {
@@ -24,7 +24,7 @@ typedef struct {
     int                     color;
     int                     autofeatures;
     int                     ready;
-} ids_Camera;   /* Be sure to update ids_Camera_members with new entries */
+} ids_core_Camera;   /* Be sure to update ids_core_Camera_members with new entries */
 
 enum ready {
     NOT_READY,
@@ -34,14 +34,14 @@ enum ready {
 };
 
 void add_constants(PyObject *m);
-PyObject *set_color_mode(ids_Camera *self, int color);
+PyObject *set_color_mode(ids_core_Camera *self, int color);
 int color_to_bitdepth(int color);
-PyObject *alloc_ids_mem(ids_Camera *self, int width, int height, uint32_t num);
-void free_all_ids_mem(ids_Camera *self);
-PyObject *image_info(ids_Camera *self, int image_id);
+PyObject *alloc_ids_core_mem(ids_core_Camera *self, int width, int height, uint32_t num);
+void free_all_ids_core_mem(ids_core_Camera *self);
+PyObject *image_info(ids_core_Camera *self, int image_id);
 
-extern PyTypeObject ids_CameraType;
-extern PyMethodDef ids_Camera_methods[];
-extern PyGetSetDef ids_Camera_getseters[];
+extern PyTypeObject ids_core_CameraType;
+extern PyMethodDef ids_core_Camera_methods[];
+extern PyGetSetDef ids_core_Camera_getseters[];
 
 #endif

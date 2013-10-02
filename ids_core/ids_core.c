@@ -30,31 +30,31 @@
 #include <datetime.h>
 #include <ueye.h>
 
-#define PY_ARRAY_UNIQUE_SYMBOL  ids_ARRAY_API
+#define PY_ARRAY_UNIQUE_SYMBOL  ids_core_ARRAY_API
 #include <numpy/arrayobject.h>
 
-#include "ids.h"
+#include "ids_core.h"
 
 #if PY_MAJOR_VERSION >= 3
-static struct PyModuleDef idsmodule = {
+static struct PyModuleDef ids_coremodule = {
     PyModuleDef_HEAD_INIT,
-    "ids",    /* name of module */
+    "ids_core",    /* name of module */
     NULL, /* module documentation, may be NULL */
     -1,       /* size of per-interpreter state of the module,
                 or -1 if the module keeps state in global variables. */
-    idsMethods
+    ids_coreMethods
 };
 #endif
 
 #if PY_MAJOR_VERSION >= 3
-PyMODINIT_FUNC PyInit_ids(void) {
+PyMODINIT_FUNC PyInit_ids_core(void) {
 #else
-PyMODINIT_FUNC initids(void) {
+PyMODINIT_FUNC initids_core(void) {
 #endif
     PyObject* m;
 
-    ids_CameraType.tp_new = PyType_GenericNew;
-    if (PyType_Ready(&ids_CameraType) < 0) {
+    ids_core_CameraType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&ids_core_CameraType) < 0) {
         #if PY_MAJOR_VERSION >= 3
         return NULL;
         #else
@@ -66,9 +66,9 @@ PyMODINIT_FUNC initids(void) {
     PyDateTime_IMPORT;
 
     #if PY_MAJOR_VERSION >= 3
-    m = PyModule_Create(&idsmodule);
+    m = PyModule_Create(&ids_coremodule);
     #else
-    m = Py_InitModule("ids", idsMethods);
+    m = Py_InitModule("ids_core", ids_coreMethods);
     #endif
 
     if (m == NULL) {
@@ -79,8 +79,8 @@ PyMODINIT_FUNC initids(void) {
         #endif
     }
 
-    Py_INCREF(&ids_CameraType);
-    PyModule_AddObject(m, "Camera", (PyObject *) &ids_CameraType);
+    Py_INCREF(&ids_core_CameraType);
+    PyModule_AddObject(m, "Camera", (PyObject *) &ids_core_CameraType);
 
     add_constants(m);
 
@@ -106,16 +106,16 @@ int main(int argc, char *argv[]) {
 
     /* Add a static module */
     #if PY_MAJOR_VERSION >= 3
-    PyInit_ids();
+    PyInit_ids_core();
     #else
-    initids();
+    initids_core();
     #endif
 
     return 0;
 }
 
 /* Stupid hack, needs DateTime, which gets clobbered in other files */
-PyObject *image_info(ids_Camera *self, int image_id) {
+PyObject *image_info(ids_core_Camera *self, int image_id) {
     UEYEIMAGEINFO image_info;
 
     int ret = is_GetImageInfo(self->handle, image_id, &image_info, sizeof(image_info));

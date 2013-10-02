@@ -29,21 +29,21 @@
 #include <structmember.h>
 #include <ueye.h>
 
-#include "ids.h"
+#include "ids_core.h"
 
-static void ids_Camera_dealloc(ids_Camera *self);
-static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds);
+static void ids_core_Camera_dealloc(ids_core_Camera *self);
+static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds);
 
-PyMemberDef ids_Camera_members[] = {
+PyMemberDef ids_core_Camera_members[] = {
     {NULL}
 };
 
-PyTypeObject ids_CameraType = {
+PyTypeObject ids_core_CameraType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "ids.Camera",              /* tp_name */
-    sizeof(ids_Camera),        /* tp_basicsize */
+    "ids_core.Camera",              /* tp_name */
+    sizeof(ids_core_Camera),        /* tp_basicsize */
     0,                         /* tp_itemsize */
-    (destructor) ids_Camera_dealloc,        /* tp_dealloc */
+    (destructor) ids_core_Camera_dealloc,        /* tp_dealloc */
     0,                         /* tp_print */
     0,                         /* tp_getattr */
     0,                         /* tp_setattr */
@@ -59,7 +59,7 @@ PyTypeObject ids_CameraType = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,        /* tp_flags */
-    "Camera([handle=0, nummem=3, color=ids.COLOR_BGRA8]) -> Camera object\n\n"
+    "Camera([handle=0, nummem=3, color=ids_core.COLOR_BGRA8]) -> Camera object\n\n"
     "Handle allows selection of camera to connect to.\n"
     "nummem is the number of image memory buffers to create for image storage.\n"
     "Color is the color space in which to store images.\n"
@@ -71,26 +71,26 @@ PyTypeObject ids_CameraType = {
     0,                         /* tp_weaklistoffset */
     0,                         /* tp_iter */
     0,                         /* tp_iternext */
-    ids_Camera_methods,        /* tp_methods */
-    ids_Camera_members,        /* tp_members */
-    ids_Camera_getseters,      /* tp_getset */
+    ids_core_Camera_methods,        /* tp_methods */
+    ids_core_Camera_members,        /* tp_members */
+    ids_core_Camera_getseters,      /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    (initproc)ids_Camera_init, /* tp_init */
+    (initproc)ids_core_Camera_init, /* tp_init */
     0,                         /* tp_alloc */
     0,                         /* tp_new */
 };
 
-static void ids_Camera_dealloc(ids_Camera *self) {
+static void ids_core_Camera_dealloc(ids_core_Camera *self) {
     /* Use ready flag to determine state of readiness to deallocate */
     switch (self->ready) {
     case READY:
         is_ExitImageQueue(self->handle);
     case ALLOCATED_MEM:
-        free_all_ids_mem(self);
+        free_all_ids_core_mem(self);
     case CONNECTED:
         /* Attempt to close camera */
         is_ExitCamera(self->handle);
@@ -99,7 +99,7 @@ static void ids_Camera_dealloc(ids_Camera *self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
+static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"handle", "nummem", "color", NULL};
     uint32_t nummem = 3;
     self->handle = 0;
@@ -111,7 +111,7 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
     self->autofeatures = 0;
     self->ready = NOT_READY;
 
-    /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids.COLOR_BGA8): */
+    /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids_core.COLOR_BGA8): */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iIi", kwlist, &self->handle, &nummem, &self->color)) {
         return -1;
     }
@@ -139,7 +139,7 @@ static int ids_Camera_init(ids_Camera *self, PyObject *args, PyObject *kwds) {
 
     int width = 3840;
     int height = 2748;
-    if (!alloc_ids_mem(self, width, height, nummem)) {
+    if (!alloc_ids_core_mem(self, width, height, nummem)) {
         return -1;
     }
 

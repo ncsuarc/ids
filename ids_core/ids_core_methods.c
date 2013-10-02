@@ -29,18 +29,18 @@
 #include <structmember.h>
 #include <ueye.h>
 
-#include "ids.h"
+#include "ids_core.h"
 
-static PyObject *ids_number_cameras(PyObject *self, PyObject *args);
-static PyObject *ids_camera_list(PyObject *self, PyObject *args);
+static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args);
+static PyObject *ids_core_camera_list(PyObject *self, PyObject *args);
 
-PyMethodDef idsMethods[] = {
-    {"number_cameras", ids_number_cameras, METH_VARARGS, "number_cameras() -> number of cameras connected."},
-    {"camera_list", ids_camera_list, METH_VARARGS, "camera_list() -> list of cameras with metadata."},
+PyMethodDef ids_coreMethods[] = {
+    {"number_cameras", ids_core_number_cameras, METH_VARARGS, "number_cameras() -> number of cameras connected."},
+    {"camera_list", ids_core_camera_list, METH_VARARGS, "camera_list() -> list of cameras with metadata."},
     {NULL, NULL, 0, NULL}
 };
 
-static PyObject *ids_number_cameras(PyObject *self, PyObject *args) {
+static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args) {
     UEYE_CAMERA_LIST    cameras;
 
     is_GetNumberOfCameras((int*) &cameras.dwCount);
@@ -48,7 +48,7 @@ static PyObject *ids_number_cameras(PyObject *self, PyObject *args) {
     return Py_BuildValue("i", cameras.dwCount);
 }
 
-static PyObject *ids_camera_list(PyObject *self, PyObject *args) {
+static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
     UEYE_CAMERA_LIST    cameras;
 
     is_GetNumberOfCameras((int *) &cameras.dwCount);

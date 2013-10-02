@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright (c) 2012, 2013, North Carolina State University Aerial Robotics Club
 # All rights reserved.
 # 
@@ -25,26 +23,5 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from distutils.core import setup, Extension
-
-ids_core = Extension("ids_core",
-                     extra_compile_args = ['-std=gnu99', '-g3'],
-                     library_dirs = ['/usr/local/lib/'],
-                     libraries = ['ueye_api', 'm', 'z', 'tiff'],
-                     sources = [
-                            'ids_core/ids_core.c',
-                            'ids_core/ids_core_methods.c',
-                            'ids_core/ids_core_constants.c',
-                            'ids_core/ids_core_Camera.c',
-                            'ids_core/ids_core_Camera_methods.c',
-                            'ids_core/ids_core_Camera_attributes.c',
-                            'ids_core/ids_core_mem.c',
-                            'ids_core/ids_core_color.c',
-                     ])
-
-setup(name = 'ids',
-      version = '0.9',
-      description = 'Wrapper for IDS ueye library',
-      author = 'Michael Pratt',
-      py_modules = ['ids'],
-      ext_modules = [ids_core])
+# For now, just import the C module
+from ids_core import *

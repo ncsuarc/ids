@@ -29,62 +29,62 @@
 #include <structmember.h>
 #include <ueye.h>
 
-#include "ids.h"
+#include "ids_core.h"
 #include "intobject.h"
 
-static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure);
-static int ids_Camera_setinfo(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setinfo(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure);
-static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getwidth(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setwidth(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getheight(ids_Camera *self, void *closure);
-static int ids_Camera_setheight(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getheight(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure);
-static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getcolor_mode(ids_Camera *self, void *closure);
-static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getcolor_mode(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setcolor_mode(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getgain(ids_Camera *self, void *closure);
-static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getgain(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setgain(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure);
-static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getexposure(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setexposure(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure);
-static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getauto_exposure(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setauto_exposure(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getauto_exposure_brightness(ids_Camera *self, void *closure);
-static int ids_Camera_setauto_exposure_brightness(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getauto_exposure_brightness(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setauto_exposure_brightness(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure);
-static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getauto_speed(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setauto_speed(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closure);
-static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getauto_white_balance(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject *value, void *closure);
 
-static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure);
-static int ids_Camera_setcolor_correction(ids_Camera *self, PyObject *value, void *closure);
+static PyObject *ids_core_Camera_getcolor_correction(ids_core_Camera *self, void *closure);
+static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *value, void *closure);
 
-PyGetSetDef ids_Camera_getseters[] = {
-    {"info", (getter) ids_Camera_getinfo, (setter) ids_Camera_setinfo, "Camera info", NULL},
-    {"width", (getter) ids_Camera_getwidth, (setter) ids_Camera_setwidth, "Image width", NULL},
-    {"height", (getter) ids_Camera_getheight, (setter) ids_Camera_setheight, "Image height", NULL},
-    {"pixelclock", (getter) ids_Camera_getpixelclock, (setter) ids_Camera_setpixelclock, "Pixel Clock of camera", NULL},
-    {"color_mode", (getter) ids_Camera_getcolor_mode, (setter) ids_Camera_setcolor_mode, "Color mode of images", NULL},
-    {"gain", (getter) ids_Camera_getgain, (setter) ids_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
-    {"exposure", (getter) ids_Camera_getexposure, (setter) ids_Camera_setexposure, "Exposure time", NULL},
-    {"auto_exposure", (getter) ids_Camera_getauto_exposure, (setter) ids_Camera_setauto_exposure, "Auto exposure", NULL},
-    {"auto_exposure_brightness", (getter) ids_Camera_getauto_exposure_brightness, (setter) ids_Camera_setauto_exposure_brightness, "Auto exposure reference brightness (0 to 1)", NULL},
-    {"auto_speed", (getter) ids_Camera_getauto_speed, (setter) ids_Camera_setauto_speed, "Auto speed", NULL},
-    {"auto_white_balance", (getter) ids_Camera_getauto_white_balance, (setter) ids_Camera_setauto_white_balance, "Auto White Balance", NULL},
-    {"color_correction", (getter) ids_Camera_getcolor_correction, (setter) ids_Camera_setcolor_correction, "IR color correction factor", NULL},
+PyGetSetDef ids_core_Camera_getseters[] = {
+    {"info", (getter) ids_core_Camera_getinfo, (setter) ids_core_Camera_setinfo, "Camera info", NULL},
+    {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
+    {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
+    {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
+    {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode, "Color mode of images", NULL},
+    {"gain", (getter) ids_core_Camera_getgain, (setter) ids_core_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
+    {"exposure", (getter) ids_core_Camera_getexposure, (setter) ids_core_Camera_setexposure, "Exposure time", NULL},
+    {"auto_exposure", (getter) ids_core_Camera_getauto_exposure, (setter) ids_core_Camera_setauto_exposure, "Auto exposure", NULL},
+    {"auto_exposure_brightness", (getter) ids_core_Camera_getauto_exposure_brightness, (setter) ids_core_Camera_setauto_exposure_brightness, "Auto exposure reference brightness (0 to 1)", NULL},
+    {"auto_speed", (getter) ids_core_Camera_getauto_speed, (setter) ids_core_Camera_setauto_speed, "Auto speed", NULL},
+    {"auto_white_balance", (getter) ids_core_Camera_getauto_white_balance, (setter) ids_core_Camera_setauto_white_balance, "Auto White Balance", NULL},
+    {"color_correction", (getter) ids_core_Camera_getcolor_correction, (setter) ids_core_Camera_setcolor_correction, "IR color correction factor", NULL},
     {NULL}
 };
 
-static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
     CAMINFO cam_info;
     SENSORINFO sensor_info;
 
@@ -208,30 +208,30 @@ static PyObject *ids_Camera_getinfo(ids_Camera *self, void *closure) {
     return dict;
 }
 
-static int ids_Camera_setinfo(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setinfo(ids_core_Camera *self, PyObject *value, void *closure) {
     PyErr_SetString(PyExc_TypeError, "Camera info is static and cannot be changed");
     return -1;
 }
 
-static PyObject *ids_Camera_getwidth(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getwidth(ids_core_Camera *self, void *closure) {
     return PyInt_FromLong(self->width);
 }
 
-static int ids_Camera_setwidth(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setwidth(ids_core_Camera *self, PyObject *value, void *closure) {
     PyErr_SetString(PyExc_NotImplementedError, "Changing image width not yet supported.");
     return -1;
 }
 
-static PyObject *ids_Camera_getheight(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getheight(ids_core_Camera *self, void *closure) {
     return PyInt_FromLong(self->height);
 }
 
-static int ids_Camera_setheight(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, void *closure) {
     PyErr_SetString(PyExc_NotImplementedError, "Changing image height not yet supported.");
     return -1;
 }
 
-static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure) {
     UINT clock;
     int ret;
 
@@ -247,7 +247,7 @@ static PyObject *ids_Camera_getpixelclock(ids_Camera *self, void *closure) {
     return NULL;
 }
 
-static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'pixelclock'");
         return -1;
@@ -287,13 +287,13 @@ static int ids_Camera_setpixelclock(ids_Camera *self, PyObject *value, void *clo
     return -1;
 }
 
-static PyObject *ids_Camera_getcolor_mode(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getcolor_mode(ids_core_Camera *self, void *closure) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
 
     return PyInt_FromLong(color);
 }
 
-static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setcolor_mode(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color'");
         return -1;
@@ -319,13 +319,13 @@ static int ids_Camera_setcolor_mode(ids_Camera *self, PyObject *value, void *clo
     return 0;
 }
 
-static PyObject *ids_Camera_getgain(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getgain(ids_core_Camera *self, void *closure) {
     int gain = is_SetHardwareGain(self->handle, IS_GET_MASTER_GAIN, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
 
     return PyInt_FromLong(gain);
 }
 
-static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setgain(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'gain'");
         return -1;
@@ -354,7 +354,7 @@ static int ids_Camera_setgain(ids_Camera *self, PyObject *value, void *closure) 
     return -1;
 }
 
-static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getexposure(ids_core_Camera *self, void *closure) {
     double exposure;
     int ret;
     ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_GET_EXPOSURE, &exposure, sizeof(exposure));
@@ -369,7 +369,7 @@ static PyObject *ids_Camera_getexposure(ids_Camera *self, void *closure) {
     return NULL;
 }
 
-static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setexposure(ids_core_Camera *self, PyObject *value, void *closure) {
     double exposure;
 
     if (value == NULL) {
@@ -404,7 +404,7 @@ static int ids_Camera_setexposure(ids_Camera *self, PyObject *value, void *closu
     return -1;
 }
 
-static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getauto_exposure(ids_core_Camera *self, void *closure) {
     double val;
     int ret;
     
@@ -427,7 +427,7 @@ static PyObject *ids_Camera_getauto_exposure(ids_Camera *self, void *closure) {
     }
 }
 
-static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setauto_exposure(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure'");
         return -1;
@@ -459,7 +459,7 @@ static int ids_Camera_setauto_exposure(ids_Camera *self, PyObject *value, void *
     return -1;
 }
 
-static PyObject *ids_Camera_getauto_exposure_brightness(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getauto_exposure_brightness(ids_core_Camera *self, void *closure) {
     double val;
     int ret;
 
@@ -476,7 +476,7 @@ static PyObject *ids_Camera_getauto_exposure_brightness(ids_Camera *self, void *
     return PyFloat_FromDouble(val/255);
 }
 
-static int ids_Camera_setauto_exposure_brightness(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setauto_exposure_brightness(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure_brightness'");
         return -1;
@@ -515,7 +515,7 @@ static int ids_Camera_setauto_exposure_brightness(ids_Camera *self, PyObject *va
     return -1;
 }
 
-static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getauto_speed(ids_core_Camera *self, void *closure) {
     double val;
     int ret;
     
@@ -531,7 +531,7 @@ static PyObject *ids_Camera_getauto_speed(ids_Camera *self, void *closure) {
     return PyFloat_FromDouble(val);
 }
 
-static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setauto_speed(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_speed'");
         return -1;
@@ -562,7 +562,7 @@ static int ids_Camera_setauto_speed(ids_Camera *self, PyObject *value, void *clo
     return -1;
 }
 
-static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getauto_white_balance(ids_core_Camera *self, void *closure) {
     double val;
     UINT val2;
     int ret;
@@ -599,7 +599,7 @@ static PyObject *ids_Camera_getauto_white_balance(ids_Camera *self, void *closur
     }
 }
 
-static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_white_balance'");
         return -1;
@@ -661,7 +661,7 @@ static int ids_Camera_setauto_white_balance(ids_Camera *self, PyObject *value, v
     return 0;
 }
 
-static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure) {
+static PyObject *ids_core_Camera_getcolor_correction(ids_core_Camera *self, void *closure) {
     double factor;
     int ret;
     
@@ -681,7 +681,7 @@ static PyObject *ids_Camera_getcolor_correction(ids_Camera *self, void *closure)
     }
 }
 
-static int ids_Camera_setcolor_correction(ids_Camera *self, PyObject *value, void *closure) {
+static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *value, void *closure) {
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color_correction'");
         return -1;
