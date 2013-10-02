@@ -384,8 +384,8 @@ static PyObject *ids_Camera_save_tiff(ids_Camera *self, PyObject *args, PyObject
     /* If we are saving bayer data, this will be a DNG */
     if (dng) {
         short cfapatterndim[] = {2,2};
-        char  cfapattern[] = {0,1,1,2}; /* BGGR */
-        const float cam_xyz[9] = /* Not for our camera! */
+        char  cfapattern[] = {0,1,1,2}; /* RGGB */
+        const float cam_xyz[9] = /* Placeholder! Need to computer real values */
         { 2.005,-0.771,-0.269,-0.752,1.688,0.064,-0.149,0.283,0.745 };
 
         TIFFSetField(file, TIFFTAG_CFAREPEATPATTERNDIM, cfapatterndim);
