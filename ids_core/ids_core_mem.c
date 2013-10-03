@@ -40,28 +40,28 @@ PyObject *alloc_ids_core_mem(ids_core_Camera *self, int width, int height, uint3
         int ret;
         ret = is_AllocImageMem(self->handle, width, height, self->bitdepth, &mem, &id);
         if (ret != IS_SUCCESS) {
-            free_all_ids_core_mem(self);
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate image memory.");
-            return NULL;
+            goto err_free_all;
         }
 
         ret = is_AddToSequence(self->handle, mem, id);
         if (ret != IS_SUCCESS) {
-            is_FreeImageMem(self->handle, mem, id);
-            free_all_ids_core_mem(self);
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate image memory.");
-            return NULL;
+            goto err_free_current;
         }
 
         if (add_mem(self, mem, id) != 0) {
-            free_all_ids_core_mem(self);
-            PyErr_SetString(PyExc_MemoryError, "Unable to allocate image memory.");
-            return NULL;
+            goto err_free_current;
         }
     }
 
     Py_INCREF(Py_True);
     return Py_True;
+
+err_free_current:
+    is_FreeImageMem(self->handle, mem, id);
+err_free_all:
+    free_all_ids_core_mem(self);
+    PyErr_SetString(PyExc_MemoryError, "Unable to allocate image memory.");
+    return NULL;
 }
 
 void free_all_ids_core_mem(ids_core_Camera *self) {
