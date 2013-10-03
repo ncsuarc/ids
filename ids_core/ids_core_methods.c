@@ -32,40 +32,64 @@
 #include "ids_core.h"
 
 static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args) {
-    UEYE_CAMERA_LIST    cameras;
+    int num_cams, ret;
 
-    is_GetNumberOfCameras((int*) &cameras.dwCount);
+    ret = is_GetNumberOfCameras(&num_cams);
+    if (ret != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Unable to get number of cameras");
+        return NULL;
+    }
 
-    return Py_BuildValue("i", cameras.dwCount);
+    return Py_BuildValue("i", num_cams);
 }
 
 static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
-    UEYE_CAMERA_LIST    cameras;
-
-    is_GetNumberOfCameras((int *) &cameras.dwCount);
-    is_GetCameraList(&cameras);
-
-    PyObject *dict = PyDict_New();
+    int num_cams, ret;
+    UEYE_CAMERA_LIST    *cameras;
     PyObject *list = PyList_New(0);
 
-    PyDict_SetItemString(dict, "dwCount", PyLong_FromLong(cameras.dwCount));
-    PyDict_SetItemString(dict, "uci", list);
+    ret = is_GetNumberOfCameras(&num_cams);
+    if (ret != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Unable to get number of cameras");
+        return NULL;
+    }
 
-    for (int i = 0; i < cameras.dwCount; i++) {
+    if (!num_cams) {
+        return list;
+    }
+
+    /*
+     * This is insane.
+     *
+     * IDS expects us to dynamically resize UEYE_CAMERA_LIST for the
+     * appropriate number of cameras.  Thus, we build a structure of the
+     * appropriate size on the stack, and then cast it to UEYE_CAMERA_LIST
+     */
+    uint8_t cam_data[sizeof(cameras->dwCount) + num_cams * sizeof(cameras->uci)];
+    cameras = (UEYE_CAMERA_LIST *) &cam_data;
+    cameras->dwCount = num_cams;
+
+    ret = is_GetCameraList(cameras);
+    if (ret != IS_SUCCESS) {
+        PyErr_SetString(PyExc_IOError, "Unable to get camera list");
+        return NULL;
+    }
+
+    for (int i = 0; i < cameras->dwCount; i++) {
         PyObject *camera_info = PyDict_New();
 
-        PyDict_SetItemString(camera_info, "dwCameraId", Py_BuildValue("I", cameras.uci[i].dwCameraID));
-        PyDict_SetItemString(camera_info, "dwDeviceId", Py_BuildValue("I", cameras.uci[i].dwDeviceID));
-        PyDict_SetItemString(camera_info, "dwSensorId", Py_BuildValue("I", cameras.uci[i].dwSensorID));
-        PyDict_SetItemString(camera_info, "dwInUse", Py_BuildValue("I", cameras.uci[i].dwInUse));
-        PyDict_SetItemString(camera_info, "SerNo", Py_BuildValue("s", cameras.uci[i].SerNo));
-        PyDict_SetItemString(camera_info, "Model", Py_BuildValue("s", cameras.uci[i].Model));
-        PyDict_SetItemString(camera_info, "dwStatus", Py_BuildValue("I", cameras.uci[i].dwStatus));
+        PyDict_SetItemString(camera_info, "camera_id", Py_BuildValue("I", cameras->uci[i].dwCameraID));
+        PyDict_SetItemString(camera_info, "device_id", Py_BuildValue("I", cameras->uci[i].dwDeviceID));
+        PyDict_SetItemString(camera_info, "sensor_id", Py_BuildValue("I", cameras->uci[i].dwSensorID));
+        PyDict_SetItemString(camera_info, "in_use", Py_BuildValue("I", cameras->uci[i].dwInUse));
+        PyDict_SetItemString(camera_info, "serial_number", Py_BuildValue("s", cameras->uci[i].SerNo));
+        PyDict_SetItemString(camera_info, "model", Py_BuildValue("s", cameras->uci[i].Model));
+        PyDict_SetItemString(camera_info, "status", Py_BuildValue("I", cameras->uci[i].dwStatus));
 
         PyList_Append(list, camera_info);
     }
 
-    return dict;
+    return list;
 }
 
 PyMethodDef ids_coreMethods[] = {

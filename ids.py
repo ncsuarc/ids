@@ -31,3 +31,9 @@ class Camera(object):
         self.width = 3840
         self.height = 2748
         self.camera = ids_core.Camera(self.width, self.height)
+
+def number_cameras():
+    return ids_core.number_cameras()
+
+def camera_list():
+    return ids_core.camera_list()
