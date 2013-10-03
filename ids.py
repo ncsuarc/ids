@@ -27,4 +27,7 @@ import ids_core
 
 class Camera(object):
     def __init__(self):
-        self.camera = ids_core.Camera()
+        # Constant, for now
+        self.width = 3840
+        self.height = 2748
+        self.camera = ids_core.Camera(self.width, self.height)

@@ -100,19 +100,22 @@ static void ids_core_Camera_dealloc(ids_core_Camera *self) {
 }
 
 static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"handle", "nummem", "color", NULL};
+    static char *kwlist[] = {"width", "height", "handle", "nummem", "color", NULL};
     uint32_t nummem = 3;
     self->handle = 0;
-    self->width = 3840;
-    self->height = 2748;
     self->mem = NULL;
     self->bitdepth = 0;
     self->color = IS_CM_BGRA8_PACKED;
     self->autofeatures = 0;
     self->ready = NOT_READY;
 
-    /* This means the definition is: def __init__(self, handle=0, nummem=3, color=ids_core.COLOR_BGA8): */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iIi", kwlist, &self->handle, &nummem, &self->color)) {
+    /*
+     * This means the definition is:
+     * def __init__(self, width, height, handle=0, nummem=3,
+     *              color=ids_core.COLOR_BGA8):
+     */
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "II|iIi", kwlist,
+            &self->width, &self->height, &self->handle, &nummem, &self->color)) {
         return -1;
     }
 
@@ -137,9 +140,7 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
         return -1;
     }
 
-    int width = 3840;
-    int height = 2748;
-    if (!alloc_ids_core_mem(self, width, height, nummem)) {
+    if (!alloc_ids_core_mem(self, self->width, self->height, nummem)) {
         return -1;
     }
 
