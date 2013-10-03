@@ -23,5 +23,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# For now, just import the C module
-from ids_core import *
+import ids_core
+
+class Camera(object):
+    def __init__(self):
+        self.camera = ids_core.Camera()
