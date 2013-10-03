@@ -1,6 +1,8 @@
 #ifndef IDS_H_INCLUDED
 #define IDS_H_INCLUDED
 
+#include <sys/queue.h>
+
 /* Module methods */
 extern PyMethodDef ids_coreMethods[];
 
@@ -8,7 +10,7 @@ extern PyMethodDef ids_coreMethods[];
 struct allocated_mem {
     char *mem;
     int id;
-    struct allocated_mem *next;
+    LIST_ENTRY(allocated_mem) list;
 };
 
 /* Camera class */
@@ -19,7 +21,7 @@ typedef struct {
     uint32_t                width;
     uint32_t                height;
     /* Internal structures */
-    struct allocated_mem    *mem;
+    LIST_HEAD(allocated_mem_head, allocated_mem) mem_list;
     int                     bitdepth;
     int                     color;
     int                     autofeatures;

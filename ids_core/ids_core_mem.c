@@ -25,6 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/queue.h>
 #include <Python.h>
 #include <ueye.h>
 
@@ -65,16 +66,13 @@ err_free_all:
 }
 
 void free_all_ids_core_mem(ids_core_Camera *self) {
-    struct allocated_mem *prev = self->mem;
-    struct allocated_mem *curr = self->mem;
-
     is_ClearSequence(self->handle);
 
-    while (curr) {
-        prev = curr;
-        curr = curr->next;
-        is_FreeImageMem(self->handle, prev->mem, prev->id);
-        free(prev);
+    while (!LIST_EMPTY(&self->mem_list)) {
+        struct allocated_mem *mem = LIST_FIRST(&self->mem_list);
+        is_FreeImageMem(self->handle, mem->mem, mem->id);
+        LIST_REMOVE(mem, list);
+        free(mem);
     }
 }
 
@@ -85,24 +83,8 @@ static int add_mem(ids_core_Camera *self, char *mem, int id) {
     }
 
     node->mem = mem;
-    node->id  = id;
-    node->next= NULL;
-
-    if (self->mem) {
-        struct allocated_mem *curr = self->mem;
-        struct allocated_mem *prev = self->mem;
-
-        /* Could be faster if tail was saved */
-        while (curr) {
-            prev = curr;
-            curr = curr->next;
-        }
-
-        prev->next = node;
-    }
-    else {
-        self->mem = node;
-    }
+    node->id = id;
+    LIST_INSERT_HEAD(&self->mem_list, node, list);
 
     return 0;
 }

@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/queue.h>
 #include <Python.h>
 #include <structmember.h>
 #include <ueye.h>
-
 #include "ids_core.h"
 
 static void ids_core_Camera_dealloc(ids_core_Camera *self);
@@ -103,11 +103,11 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
     static char *kwlist[] = {"width", "height", "handle", "nummem", "color", NULL};
     uint32_t nummem = 3;
     self->handle = 0;
-    self->mem = NULL;
     self->bitdepth = 0;
     self->color = IS_CM_BGRA8_PACKED;
     self->autofeatures = 0;
     self->ready = NOT_READY;
+    LIST_INIT(&self->mem_list);
 
     /*
      * This means the definition is:
