@@ -89,8 +89,7 @@ static void ids_core_Camera_dealloc(ids_core_Camera *self) {
     switch (self->ready) {
     case READY:
         is_ExitImageQueue(self->handle);
-    case ALLOCATED_MEM:
-        free_all_ids_core_mem(self);
+        ids_core_Camera_free_all(self, NULL, NULL);
     case CONNECTED:
         /* Attempt to close camera */
         is_ExitCamera(self->handle);
@@ -100,8 +99,7 @@ static void ids_core_Camera_dealloc(ids_core_Camera *self) {
 }
 
 static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"width", "height", "handle", "nummem", "color", NULL};
-    uint32_t nummem = 3;
+    static char *kwlist[] = {"width", "height", "handle", "color", NULL};
     self->handle = 0;
     self->bitdepth = 0;
     self->color = IS_CM_BGRA8_PACKED;
@@ -111,11 +109,10 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
 
     /*
      * This means the definition is:
-     * def __init__(self, width, height, handle=0, nummem=3,
-     *              color=ids_core.COLOR_BGA8):
+     * def __init__(self, width, height, handle=0, color=ids_core.COLOR_BGA8):
      */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "II|iIi", kwlist,
-            &self->width, &self->height, &self->handle, &nummem, &self->color)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "II|ii", kwlist,
+            &self->width, &self->height, &self->handle, &self->color)) {
         return -1;
     }
 
@@ -139,12 +136,6 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
     if (!set_color_mode(self, self->color)) {
         return -1;
     }
-
-    if (!alloc_ids_core_mem(self, self->width, self->height, nummem)) {
-        return -1;
-    }
-
-    self->ready = ALLOCATED_MEM;
 
     /* Initialize image queue so we can WaitForNextImage */
     if (is_InitImageQueue(self->handle, 0) != IS_SUCCESS) {

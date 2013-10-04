@@ -26,11 +26,23 @@
 import ids_core
 
 class Camera(object):
-    def __init__(self):
+    """
+    IDS Camera object
+
+    Arguments:
+        nummem: Number of memory locations to allocate for storing images
+    """
+
+    def __init__(self, nummem=5):
+        self.nummem = nummem
+
         # Constant, for now
         self.width = 3840
         self.height = 2748
         self.camera = ids_core.Camera(self.width, self.height)
+
+        for i in range(self.nummem):
+            self.camera.alloc()
 
 def number_cameras():
     return ids_core.number_cameras()

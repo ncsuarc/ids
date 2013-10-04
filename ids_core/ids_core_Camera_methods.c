@@ -30,6 +30,7 @@
 #include <ueye.h>
 #include <wchar.h>
 #include <stdio.h>
+#include <sys/queue.h>
 
 #define PY_ARRAY_UNIQUE_SYMBOL  ids_core_ARRAY_API
 #define NO_IMPORT_ARRAY
@@ -43,6 +44,62 @@
 #define NUM_TRIES 5
 
 static PyObject *create_matrix(ids_core_Camera *self, char *mem);
+
+static int add_mem(ids_core_Camera *self, char *mem, int id) {
+    struct allocated_mem *node = malloc(sizeof(struct allocated_mem));
+    if (node == NULL) {
+        return -1;
+    }
+
+    node->mem = mem;
+    node->id = id;
+    LIST_INSERT_HEAD(&self->mem_list, node, list);
+
+    return 0;
+}
+
+static PyObject *ids_core_Camera_alloc(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
+    char *mem;
+    int id, ret;
+
+    ret = is_AllocImageMem(self->handle, self->width, self->height,
+                           self->bitdepth, &mem, &id);
+    if (ret != IS_SUCCESS) {
+        goto err;
+    }
+
+    ret = is_AddToSequence(self->handle, mem, id);
+    if (ret != IS_SUCCESS) {
+        goto err_free;
+    }
+
+    if (add_mem(self, mem, id) != 0) {
+        goto err_free;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+err_free:
+    is_FreeImageMem(self->handle, mem, id);
+err:
+    PyErr_SetString(PyExc_MemoryError, "Unable to allocate image memory.");
+    return NULL;
+}
+
+PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
+    is_ClearSequence(self->handle);
+
+    while (!LIST_EMPTY(&self->mem_list)) {
+        struct allocated_mem *mem = LIST_FIRST(&self->mem_list);
+        is_FreeImageMem(self->handle, mem->mem, mem->id);
+        LIST_REMOVE(mem, list);
+        free(mem);
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
 
 static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     if (is_ExitCamera(self->handle) != IS_SUCCESS) {
@@ -61,6 +118,9 @@ static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObjec
         break;
     case IS_TIMED_OUT:
         PyErr_SetString(PyExc_IOError, "Continuous capture start timed out.");
+        return NULL;
+    case IS_NO_ACTIVE_IMG_MEM:
+        PyErr_SetString(PyExc_IOError, "No image memory available.");
         return NULL;
     default:
         PyErr_SetString(PyExc_IOError, "Unable to start continuous capture.");
@@ -399,7 +459,16 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
 }
 
 PyMethodDef ids_core_Camera_methods[] = {
-    {"close", (PyCFunction) ids_core_Camera_close, METH_VARARGS, "close()\n\nCloses open camera"},
+    {"alloc", (PyCFunction) ids_core_Camera_alloc, METH_NOARGS,
+        "alloc()\n\n"
+        "Allocates a single memory location for storing images.\n"
+        "Memory locations must be allocated before capturing images."
+    },
+    {"free_all", (PyCFunction) ids_core_Camera_free_all, METH_NOARGS,
+        "free_all()\n\n"
+        "Frees all allocated memory for storing images."
+    },
+    {"close", (PyCFunction) ids_core_Camera_close, METH_NOARGS, "close()\n\nCloses open camera"},
     {"start_continuous", (PyCFunction) ids_core_Camera_start_continuous, METH_VARARGS, "start_continuous()\n\nInitializes continuous image capture."},
     {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
     {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},

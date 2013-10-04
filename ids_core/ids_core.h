@@ -31,16 +31,16 @@ typedef struct {
 enum ready {
     NOT_READY,
     CONNECTED,
-    ALLOCATED_MEM,
     READY,
 };
 
 void add_constants(PyObject *m);
 PyObject *set_color_mode(ids_core_Camera *self, int color);
 int color_to_bitdepth(int color);
-PyObject *alloc_ids_core_mem(ids_core_Camera *self, int width, int height, uint32_t num);
-void free_all_ids_core_mem(ids_core_Camera *self);
 PyObject *image_info(ids_core_Camera *self, int image_id);
+
+/* Exported method for freeing all memory */
+PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObject *kwds);
 
 extern PyTypeObject ids_core_CameraType;
 extern PyMethodDef ids_core_Camera_methods[];

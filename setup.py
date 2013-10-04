@@ -38,7 +38,6 @@ ids_core = Extension("ids_core",
                             'ids_core/ids_core_Camera.c',
                             'ids_core/ids_core_Camera_methods.c',
                             'ids_core/ids_core_Camera_attributes.c',
-                            'ids_core/ids_core_mem.c',
                             'ids_core/ids_core_color.c',
                      ])
 
