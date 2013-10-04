@@ -494,8 +494,21 @@ PyMethodDef ids_core_Camera_methods[] = {
         "stop_continuous()\n\n"
         "Stops continuous image capture."
     },
-    {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS, "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\nSaves next image in buffer and returns metadata from camera."},
-    {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS, "next() -> image, metadata\n\nReturns next image in buffer as a numpy array and metadata from camera."},
-    {"save_tiff", (PyCFunction) ids_core_Camera_save_tiff, METH_VARARGS, "save_tiff(image, filename)\n\nSave a captured image as a tiff.  Image must be a numpy array,\nand is expected to be one returned from next().\nIf the color mode is currently bayer, the image will be saved as a RAW DNG\n, a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n Non bayer images must be ids_core.COLOR_RGB8 or ids_core.COLOR_MONO*."},
+    {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS,
+        "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\n"
+        "Saves next image in buffer and returns metadata from camera."
+    },
+    {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS,
+        "next() -> image, metadata\n\n"
+        "Returns next image in buffer as a numpy array and metadata from camera."
+    },
+    {"save_tiff", (PyCFunction) ids_core_Camera_save_tiff, METH_VARARGS,
+        "save_tiff(image, filename)\n\n"
+        "Save a captured image as a tiff.  Image must be a numpy array,\n"
+        "and is expected to be one returned from next().\n"
+        "If the color mode is currently bayer, the image will be saved as a RAW DNG,\n"
+        "a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n"
+        "Non bayer images must be ids_core.COLOR_RGB8 or ids_core.COLOR_MONO*."
+    },
     {NULL}
 };
