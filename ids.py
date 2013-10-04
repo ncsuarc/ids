@@ -33,16 +33,43 @@ class Camera(object):
         nummem: Number of memory locations to allocate for storing images
     """
 
-    def __init__(self, nummem=5):
+    def __init__(self, nummem=5, color=ids_core.COLOR_BGRA8):
         self.nummem = nummem
+        self.capturing = False
 
         # Constant, for now
         self.width = 3840
         self.height = 2748
-        self.camera = ids_core.Camera(self.width, self.height)
+        self.camera = ids_core.Camera(self.width, self.height, color=color)
 
+        self._allocate_memory()
+
+    def _allocate_memory(self):
         for i in range(self.nummem):
             self.camera.alloc()
+
+    def start_continuous(self):
+        self.capturing = True
+        return self.camera.start_continuous()
+
+    def stop_continuous(self):
+        self.capturing = False
+        return self.camera.stop_continuous()
+
+    @property
+    def color_mode(self):
+        return self.camera.color_mode
+
+    @color_mode.setter
+    def color_mode(self, val):
+        if self.capturing:
+            raise IOError("Color cannot be changed while capturing images")
+
+        self.camera.color_mode = val
+
+        # Free all memory and reallocate, as bitdepth may have changed
+        self.camera.free_all()
+        self._allocate_memory()
 
 def number_cameras():
     return ids_core.number_cameras()

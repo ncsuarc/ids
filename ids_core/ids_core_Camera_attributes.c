@@ -255,11 +255,6 @@ static int ids_core_Camera_setcolor_mode(ids_core_Camera *self, PyObject *value,
     int color = (int) PyInt_AsLong(value);
     Py_DECREF(value);
 
-    if (self->bitdepth != color_to_bitdepth(color)) {
-        PyErr_SetString(PyExc_NotImplementedError, "Changing color mode to different bitdepth not yet supported.");
-        return -1;
-    }
-
     if (!set_color_mode(self, color)) {
         return -1;
     }
@@ -680,7 +675,12 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
-    {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode, "Color mode of images", NULL},
+    {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode,
+        "Color mode of images.\n\n"
+        "It is recommended to change color mode only when not\n"
+        "capturing images, and to free and reallocate memory\n"
+        "after changing, as the new color mode may have a different\n"
+        "bit depth.", NULL},
     {"gain", (getter) ids_core_Camera_getgain, (setter) ids_core_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_core_Camera_getexposure, (setter) ids_core_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_core_Camera_getauto_exposure, (setter) ids_core_Camera_setauto_exposure, "Auto exposure", NULL},
