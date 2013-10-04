@@ -46,12 +46,12 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem);
 
 static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     if (is_ExitCamera(self->handle) != IS_SUCCESS) {
-        Py_INCREF(Py_False);
-        return Py_False;
+        PyErr_SetString(PyExc_IOError, "Unable to close camera");
+        return NULL;
     }
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
@@ -67,8 +67,8 @@ static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObjec
         return NULL;
     }
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static void warn_capture_status(ids_core_Camera *self) {
@@ -394,8 +394,8 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
     TIFFWriteDirectory(file);
     TIFFClose(file);
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 PyMethodDef ids_core_Camera_methods[] = {

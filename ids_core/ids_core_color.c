@@ -64,6 +64,6 @@ PyObject *set_color_mode(ids_core_Camera *self, int color) {
     /* Set object bit depth */
     self->bitdepth = color_to_bitdepth(color);
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_INCREF(Py_None);
+    return Py_None;
 }

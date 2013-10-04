@@ -54,8 +54,8 @@ PyObject *alloc_ids_core_mem(ids_core_Camera *self, int width, int height, uint3
         }
     }
 
-    Py_INCREF(Py_True);
-    return Py_True;
+    Py_INCREF(Py_None);
+    return Py_None;
 
 err_free_current:
     is_FreeImageMem(self->handle, mem, id);
