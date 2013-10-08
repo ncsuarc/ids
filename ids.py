@@ -35,7 +35,6 @@ class Camera(object):
 
     def __init__(self, nummem=5, color=ids_core.COLOR_BGRA8):
         self.nummem = nummem
-        self.capturing = False
 
         # Constant, for now
         self.width = 3840
@@ -48,21 +47,13 @@ class Camera(object):
         for i in range(self.nummem):
             self.camera.alloc()
 
-    def start_continuous(self):
-        self.capturing = True
-        return self.camera.start_continuous()
-
-    def stop_continuous(self):
-        self.capturing = False
-        return self.camera.stop_continuous()
-
     @property
     def color_mode(self):
         return self.camera.color_mode
 
     @color_mode.setter
     def color_mode(self, val):
-        if self.capturing:
+        if self.camera.continuous_capture:
             raise IOError("Color cannot be changed while capturing images")
 
         self.camera.color_mode = val

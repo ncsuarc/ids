@@ -670,6 +670,70 @@ static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *
     return -1;
 }
 
+static PyObject *ids_core_Camera_getcontinuous_capture(ids_core_Camera *self,
+                                                       void *closure) {
+    int ret;
+
+    ret = is_CaptureVideo(self->handle, IS_GET_LIVE);
+    if (ret == TRUE) {
+        Py_INCREF(Py_True);
+        return Py_True;
+    }
+
+    Py_INCREF(Py_False);
+    return Py_False;
+}
+
+static int ids_core_Camera_setcontinuous_capture(ids_core_Camera *self,
+                                                 PyObject *value, void *closure) {
+    int ret;
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'continuous_capture'");
+        return -1;
+    }
+
+    if (!PyBool_Check(value)) {
+        PyErr_SetString(PyExc_TypeError, "Attribute 'continuous_capture' must be boolean");
+        return -1;
+    }
+
+    /* Enable continuous capture */
+    if (value == Py_True) {
+        ret = is_CaptureVideo(self->handle, IS_DONT_WAIT);
+        switch (ret) {
+        case IS_SUCCESS:
+            break;
+        case IS_TIMED_OUT:
+            PyErr_SetString(PyExc_IOError, "Continuous capture start timed out.");
+            return -1;
+        case IS_NO_ACTIVE_IMG_MEM:
+            PyErr_SetString(PyExc_IOError, "No image memory available.");
+            return -1;
+        default:
+            PyErr_SetString(PyExc_IOError, "Unable to start continuous capture.");
+            return -1;
+        }
+    }
+    /* Disable continuous capture */
+    else if (value == Py_False) {
+        ret = is_StopLiveVideo(self->handle, IS_FORCE_VIDEO_STOP);
+        switch (ret) {
+        case IS_SUCCESS:
+            break;
+        default:
+            PyErr_SetString(PyExc_IOError, "Unable to stop continuous capture.");
+            return -1;
+        }
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "Unknown boolean value");
+        return -1;
+    }
+
+    return 0;
+}
+
 PyGetSetDef ids_core_Camera_getseters[] = {
     {"info", (getter) ids_core_Camera_getinfo, (setter) ids_core_Camera_setinfo, "Camera info", NULL},
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
@@ -688,5 +752,9 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"auto_speed", (getter) ids_core_Camera_getauto_speed, (setter) ids_core_Camera_setauto_speed, "Auto speed", NULL},
     {"auto_white_balance", (getter) ids_core_Camera_getauto_white_balance, (setter) ids_core_Camera_setauto_white_balance, "Auto White Balance", NULL},
     {"color_correction", (getter) ids_core_Camera_getcolor_correction, (setter) ids_core_Camera_setcolor_correction, "IR color correction factor", NULL},
+    {"continuous_capture", (getter) ids_core_Camera_getcontinuous_capture, (setter) ids_core_Camera_setcontinuous_capture,
+        "Enable or disable camera continuous capture (free-run) mode.\n\n"
+        "Once set to True, continuous capture is enabled, and methods\n"
+        "to retrieve images can be called.", NULL},
     {NULL}
 };

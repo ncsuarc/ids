@@ -111,40 +111,6 @@ static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, Py
     return Py_None;
 }
 
-static PyObject *ids_core_Camera_start_continuous(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    int ret = is_CaptureVideo(self->handle, IS_DONT_WAIT);
-    switch (ret) {
-    case IS_SUCCESS:
-        break;
-    case IS_TIMED_OUT:
-        PyErr_SetString(PyExc_IOError, "Continuous capture start timed out.");
-        return NULL;
-    case IS_NO_ACTIVE_IMG_MEM:
-        PyErr_SetString(PyExc_IOError, "No image memory available.");
-        return NULL;
-    default:
-        PyErr_SetString(PyExc_IOError, "Unable to start continuous capture.");
-        return NULL;
-    }
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-static PyObject *ids_core_Camera_stop_continuous(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    int ret = is_StopLiveVideo(self->handle, IS_FORCE_VIDEO_STOP);
-    switch (ret) {
-    case IS_SUCCESS:
-        break;
-    default:
-        PyErr_SetString(PyExc_IOError, "Unable to stop continuous capture.");
-        return NULL;
-    }
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
 static void warn_capture_status(ids_core_Camera *self) {
     UEYE_CAPTURE_STATUS_INFO capture_status;
     int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
@@ -485,14 +451,6 @@ PyMethodDef ids_core_Camera_methods[] = {
     {"close", (PyCFunction) ids_core_Camera_close, METH_NOARGS,
         "close()\n\n"
         "Closes open camera"
-    },
-    {"start_continuous", (PyCFunction) ids_core_Camera_start_continuous, METH_NOARGS,
-        "start_continuous()\n\n"
-        "Initializes continuous image capture."
-    },
-    {"stop_continuous", (PyCFunction) ids_core_Camera_stop_continuous, METH_NOARGS,
-        "stop_continuous()\n\n"
-        "Stops continuous image capture."
     },
     {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS,
         "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\n"
