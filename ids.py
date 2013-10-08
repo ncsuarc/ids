@@ -25,7 +25,7 @@
 
 import ids_core
 
-class Camera(object):
+class Camera(ids_core.Camera):
     """
     IDS Camera object
 
@@ -37,29 +37,30 @@ class Camera(object):
         self.nummem = nummem
 
         # Constant, for now
-        self.width = 3840
-        self.height = 2748
-        self.camera = ids_core.Camera(self.width, self.height, color=color)
+        width = 3840
+        height = 2748
+        super(Camera, self).__init__(width, height, color=color)
 
         self._allocate_memory()
 
     def _allocate_memory(self):
         for i in range(self.nummem):
-            self.camera.alloc()
+            self.alloc()
 
+    # Override color_mode to reallocate memory when changed
     @property
     def color_mode(self):
-        return self.camera.color_mode
+        return ids_core.Camera.color_mode.__get__(self)
 
     @color_mode.setter
     def color_mode(self, val):
-        if self.camera.continuous_capture:
+        if self.continuous_capture:
             raise IOError("Color cannot be changed while capturing images")
 
-        self.camera.color_mode = val
+        ids_core.Camera.color_mode.__set__(self, val)
 
         # Free all memory and reallocate, as bitdepth may have changed
-        self.camera.free_all()
+        self.free_all()
         self._allocate_memory()
 
 def number_cameras():

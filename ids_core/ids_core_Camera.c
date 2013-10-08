@@ -58,7 +58,7 @@ PyTypeObject ids_core_CameraType = {
     0,                         /* tp_getattro */
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,        /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
     "Camera([handle=0, nummem=3, color=ids_core.COLOR_BGRA8]) -> Camera object\n\n"
     "Handle allows selection of camera to connect to.\n"
     "nummem is the number of image memory buffers to create for image storage.\n"
