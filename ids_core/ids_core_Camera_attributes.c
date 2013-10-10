@@ -30,7 +30,6 @@
 #include <ueye.h>
 
 #include "ids_core.h"
-#include "intobject.h"
 
 static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
     CAMINFO cam_info;
