@@ -147,7 +147,7 @@ PyObject *image_info(ids_core_Camera *self, int image_id) {
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to retrieve image info.");
+        raise_general_error(self, ret);
         return NULL;
     }
 

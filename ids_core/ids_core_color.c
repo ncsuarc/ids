@@ -57,7 +57,7 @@ PyObject *set_color_mode(ids_core_Camera *self, int color) {
         PyErr_SetString(PyExc_ValueError, "Unsupported color format.");
         return NULL;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set color mode.");
+        raise_general_error(self, ret);
         return NULL;
     }
 

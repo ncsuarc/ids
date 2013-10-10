@@ -36,7 +36,7 @@ static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args) {
 
     ret = is_GetNumberOfCameras(&num_cams);
     if (ret != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Unable to get number of cameras");
+        PyErr_Format(IDSError, "uEye SDK error %d", ret);
         return NULL;
     }
 
@@ -50,7 +50,7 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
 
     ret = is_GetNumberOfCameras(&num_cams);
     if (ret != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Unable to get number of cameras");
+        PyErr_Format(IDSError, "uEye SDK error %d", ret);
         return NULL;
     }
 
@@ -71,7 +71,7 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
 
     ret = is_GetCameraList(cameras);
     if (ret != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Unable to get camera list");
+        PyErr_Format(IDSError, "uEye SDK error %d", ret);
         return NULL;
     }
 

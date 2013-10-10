@@ -38,12 +38,14 @@ static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
 
     int ret = is_GetCameraInfo(self->handle, &cam_info);
     if (ret != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Failed to retrieve camera info.");
+        raise_general_error(self, ret);
+        return NULL;
     }
 
     ret = is_GetSensorInfo(self->handle, &sensor_info);
     if (ret != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Failed to retrieve sensor info.");
+        raise_general_error(self, ret);
+        return NULL;
     }
 
     PyObject *dict = PyDict_New();
@@ -157,12 +159,12 @@ static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
 }
 
 static int ids_core_Camera_setinfo(ids_core_Camera *self, PyObject *value, void *closure) {
-    PyErr_SetString(PyExc_TypeError, "Camera info is static and cannot be changed");
+    PyErr_SetString(PyExc_TypeError, "Cannot modify attribute 'info'");
     return -1;
 }
 
 static PyObject *ids_core_Camera_getwidth(ids_core_Camera *self, void *closure) {
-    return PyInt_FromLong(self->width);
+    return PyLong_FromLong(self->width);
 }
 
 static int ids_core_Camera_setwidth(ids_core_Camera *self, PyObject *value, void *closure) {
@@ -171,7 +173,7 @@ static int ids_core_Camera_setwidth(ids_core_Camera *self, PyObject *value, void
 }
 
 static PyObject *ids_core_Camera_getheight(ids_core_Camera *self, void *closure) {
-    return PyInt_FromLong(self->height);
+    return PyLong_FromLong(self->height);
 }
 
 static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, void *closure) {
@@ -186,31 +188,28 @@ static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *clos
     ret = is_PixelClock(self->handle, IS_PIXELCLOCK_CMD_GET, &clock, sizeof(clock));
     switch (ret) {
     case IS_SUCCESS:
-        return PyInt_FromLong(clock);
+        return PyLong_FromLong(clock);
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to retreive pixel clock from camera");
+        raise_general_error(self, ret);
     }
 
     return NULL;
 }
 
 static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret, clock;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'pixelclock'");
         return -1;
     }
 
-    int clock;
-
-    if (PyInt_Check(value)) {
-        clock = (int) PyInt_AsLong(value);
-    }
-    else if (PyLong_Check(value)) {
-        clock = (int) PyLong_AsLong(value);
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError, "Pixel clock must be an int or long.");
+    clock = (int) PyLong_AsLong(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Pixel clock value must be an int or long");
         return -1;
     }
 
@@ -219,7 +218,6 @@ static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value,
         return -1;
     }
 
-    int ret;
     ret = is_PixelClock(self->handle, IS_PIXELCLOCK_CMD_SET, (void*) &clock, sizeof(clock));
     switch (ret) {
     case IS_SUCCESS:
@@ -229,7 +227,7 @@ static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value,
         PyErr_SetString(PyExc_ValueError, "Pixel clock value out of range");
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to set pixel clock.");
+        raise_general_error(self, ret);
     }
 
     return -1;
@@ -238,22 +236,24 @@ static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value,
 static PyObject *ids_core_Camera_getcolor_mode(ids_core_Camera *self, void *closure) {
     int color = is_SetColorMode(self->handle, IS_GET_COLOR_MODE);
 
-    return PyInt_FromLong(color);
+    return PyLong_FromLong(color);
 }
 
 static int ids_core_Camera_setcolor_mode(ids_core_Camera *self, PyObject *value, void *closure) {
+    int color;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color'");
         return -1;
     }
 
-    if (!PyInt_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Color mode must be an int.");
+    color = (int) PyLong_AsLong(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Color mode must be an int or long");
         return -1;
     }
-
-    int color = (int) PyInt_AsLong(value);
-    Py_DECREF(value);
 
     if (!set_color_mode(self, color)) {
         return -1;
@@ -263,26 +263,29 @@ static int ids_core_Camera_setcolor_mode(ids_core_Camera *self, PyObject *value,
 }
 
 static PyObject *ids_core_Camera_getgain(ids_core_Camera *self, void *closure) {
-    int gain = is_SetHardwareGain(self->handle, IS_GET_MASTER_GAIN, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
+    int gain = is_SetHardwareGain(self->handle, IS_GET_MASTER_GAIN,
+            IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
 
-    return PyInt_FromLong(gain);
+    return PyLong_FromLong(gain);
 }
 
 static int ids_core_Camera_setgain(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret, gain;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'gain'");
         return -1;
     }
 
-    if (!PyInt_Check(value)) {
-        PyErr_SetString(PyExc_TypeError, "Gain must be an int.");
+    gain = (int) PyLong_AsLong(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Gain must be an int or long");
         return -1;
     }
 
-    int gain = (int) PyInt_AsLong(value);
-    Py_DECREF(value);
-
-    int ret = is_SetHardwareGain(self->handle, gain, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
+    ret = is_SetHardwareGain(self->handle, gain, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER, IS_IGNORE_PARAMETER);
     switch (ret) {
     case IS_SUCCESS:
         return 0;
@@ -290,7 +293,7 @@ static int ids_core_Camera_setgain(ids_core_Camera *self, PyObject *value, void 
         PyErr_SetString(PyExc_ValueError, "Gain out of range.");
         return -1;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set gain.");
+        raise_general_error(self, ret);
         return -1;
     }
 
@@ -300,38 +303,36 @@ static int ids_core_Camera_setgain(ids_core_Camera *self, PyObject *value, void 
 static PyObject *ids_core_Camera_getexposure(ids_core_Camera *self, void *closure) {
     double exposure;
     int ret;
+
     ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_GET_EXPOSURE, &exposure, sizeof(exposure));
     switch (ret) {
     case IS_SUCCESS:
         return PyFloat_FromDouble(exposure);
         break;
     default:
-        PyErr_Format(PyExc_IOError, "Failed to retrieve exposure time from camera. Returned: %d", ret);
+        raise_general_error(self, ret);
     }
 
     return NULL;
 }
 
 static int ids_core_Camera_setexposure(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
     double exposure;
+    PyObject *exception;
 
     if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'exposure' (that would be silly)");
+        PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'exposure'");
         return -1;
     }
 
-    PyObject *flt = PyNumber_Float(value);
-    if (flt == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Could not convert your crappy arg to a float.");
-        Py_DECREF(value);
+    exposure = PyFloat_AsDouble(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Exposure must be a number");
         return -1;
     }
 
-    exposure = PyFloat_AsDouble(flt); 
-
-    Py_DECREF(flt);
-
-    int ret;
     ret = is_Exposure(self->handle, IS_EXPOSURE_CMD_SET_EXPOSURE, (void*) &exposure, sizeof(exposure));
     switch (ret) {
     case IS_SUCCESS:
@@ -341,7 +342,7 @@ static int ids_core_Camera_setexposure(ids_core_Camera *self, PyObject *value, v
         PyErr_SetString(PyExc_ValueError, "Exposure out of range");
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to set exposure time");
+        raise_general_error(self, ret);
     }
 
     return -1;
@@ -356,7 +357,7 @@ static PyObject *ids_core_Camera_getauto_exposure(ids_core_Camera *self, void *c
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to get auto exposure setting.");
+        raise_general_error(self, ret);
         return NULL;
     }
         
@@ -382,7 +383,6 @@ static int ids_core_Camera_setauto_exposure(ids_core_Camera *self, PyObject *val
     }
 
     double val = (value == Py_True) ? 1 : 0;
-    Py_DECREF(value);
 
     int ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_SHUTTER, &val, NULL);
     switch (ret) {
@@ -395,7 +395,7 @@ static int ids_core_Camera_setauto_exposure(ids_core_Camera *self, PyObject *val
         }
         return 0;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure.");
+        raise_general_error(self, ret);
         return -1;
     }
 
@@ -411,7 +411,7 @@ static PyObject *ids_core_Camera_getauto_exposure_brightness(ids_core_Camera *se
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to get auto exposure brightness setting.");
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -420,30 +420,31 @@ static PyObject *ids_core_Camera_getauto_exposure_brightness(ids_core_Camera *se
 }
 
 static int ids_core_Camera_setauto_exposure_brightness(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+    double val;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_exposure_brightness'");
         return -1;
     }
 
-    PyObject *flt = PyNumber_Float(value);
-    if (flt == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Value must be a number");
-        Py_DECREF(value);
+    val = PyFloat_AsDouble(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Exposure brightness must be a number");
         return -1;
     }
 
-    double val = PyFloat_AsDouble(value);
-    Py_DECREF(value);
-
     if (val < 0 || val > 1) {
-        PyErr_SetString(PyExc_ValueError, "Value must be between 0 and 1");
+        PyErr_SetString(PyExc_ValueError, "Exposure brightness must be between 0 and 1");
         return -1;
     }
 
     /* Value is 0..255, extract from proportion */
     val = val * 255;
 
-    int ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_REFERENCE, &val, NULL);
+    ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_REFERENCE, &val, NULL);
     switch (ret) {
     case IS_SUCCESS:
         return 0;
@@ -451,7 +452,7 @@ static int ids_core_Camera_setauto_exposure_brightness(ids_core_Camera *self, Py
         PyErr_SetString(PyExc_ValueError, "Auto exposure brightness out of range");
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set auto exposure brightness");
+        raise_general_error(self, ret);
         return -1;
     }
 
@@ -475,30 +476,37 @@ static PyObject *ids_core_Camera_getauto_speed(ids_core_Camera *self, void *clos
 }
 
 static int ids_core_Camera_setauto_speed(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+    double val;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_speed'");
         return -1;
     }
 
-    PyObject *flt = PyNumber_Float(value);
-    if (flt == NULL) {
-        PyErr_SetString(PyExc_TypeError, "Value must be a number");
-        Py_DECREF(value);
+    val = PyFloat_AsDouble(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Auto speed must be a number");
         return -1;
     }
 
-    double val = PyFloat_AsDouble(value);
-    Py_DECREF(value);
+    /* is_SetAutoParameter() returns IS_NO_SUCCESS for out-of-range values ... */
+    if (val < 0 || val > 100) {
+        PyErr_SetString(PyExc_ValueError, "Auto speed out of range (0...100)");
+        return -1;
+    }
 
-    int ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_SPEED, &val, NULL);
+    ret = is_SetAutoParameter(self->handle, IS_SET_AUTO_SPEED, &val, NULL);
     switch (ret) {
     case IS_SUCCESS:
         return 0;
     case IS_INVALID_PARAMETER:
-        PyErr_SetString(PyExc_ValueError, "Auto speed out of range");
+        PyErr_SetString(PyExc_ValueError, "Auto speed out of range (0..100)");
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set auto speed.");
+        raise_general_error(self, ret);
         return -1;
     }
 
@@ -515,7 +523,7 @@ static PyObject *ids_core_Camera_getauto_white_balance(ids_core_Camera *self, vo
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -524,7 +532,7 @@ static PyObject *ids_core_Camera_getauto_white_balance(ids_core_Camera *self, vo
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to get auto white balance setting.");
+        raise_general_error(self, ret);
         return NULL;
     }
         
@@ -543,6 +551,10 @@ static PyObject *ids_core_Camera_getauto_white_balance(ids_core_Camera *self, vo
 }
 
 static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+    double val;
+    UINT val2;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'auto_white_balance'");
         return -1;
@@ -553,29 +565,23 @@ static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject
         return -1;
     }
 
-    double val = (value == Py_True) ? 1 : 0;
-    Py_DECREF(value);
+    val = (value == Py_True) ? 1 : 0;
+    val2 = (UINT) val;
 
-    int ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+    ret = is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
     switch (ret) {
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
-        return -1;
+        goto err;
     }
-
-    UINT val2 = val/1;
 
     ret = is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
     switch (ret) {
     case IS_SUCCESS:
         break;
     default:
-        val = 0;
-        is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
-        PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
-        return -1;
+        goto err_reset_set_auto_param;
     }
 
     if (val2) {
@@ -585,12 +591,7 @@ static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject
         case IS_SUCCESS:
             break;
         default:
-            val = 0;
-            is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
-            val2 = 0;
-            is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
-            PyErr_SetString(PyExc_IOError, "Unable to set auto white balance.");
-            return -1;
+            goto err_reset_auto_param;
         }
     }
 
@@ -602,6 +603,16 @@ static int ids_core_Camera_setauto_white_balance(ids_core_Camera *self, PyObject
     }
 
     return 0;
+
+err_reset_auto_param:
+    val2 = 0;
+    is_AutoParameter(self->handle, IS_AWB_CMD_SET_ENABLE, &val2, sizeof(val2));
+err_reset_set_auto_param:
+    val = 0;
+    is_SetAutoParameter(self->handle, IS_SET_ENABLE_AUTO_WHITEBALANCE, &val, NULL);
+err:
+    raise_general_error(self, ret);
+    return -1;
 }
 
 static PyObject *ids_core_Camera_getcolor_correction(ids_core_Camera *self, void *closure) {
@@ -619,12 +630,16 @@ static PyObject *ids_core_Camera_getcolor_correction(ids_core_Camera *self, void
         Py_INCREF(Py_False);
         return Py_False;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to get color correction setting.");
+        raise_general_error(self, ret);
         return NULL;
     }
 }
 
 static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+    double factor;
+    PyObject *exception;
+
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete attribute 'color_correction'");
         return -1;
@@ -632,30 +647,24 @@ static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *
 
     /* Disable color correction */
     if (value == Py_False) {
-        double factor;
-        Py_DECREF(value);
-
-        int ret = is_SetColorCorrection(self->handle, IS_CCOR_DISABLE, &factor);
+        ret = is_SetColorCorrection(self->handle, IS_CCOR_DISABLE, &factor);
         switch (ret) {
         case IS_SUCCESS:
             return 0;
         default:
-            PyErr_SetString(PyExc_IOError, "Unable to disable color correction.");
+            raise_general_error(self, ret);
             return -1;
         }
     }
 
-    PyObject *num = PyNumber_Float(value);
-    Py_DECREF(value);
-    if (!num) {
-        PyErr_SetString(PyExc_TypeError, "Color correction factor must be a float(ish).");
+    factor = PyFloat_AsDouble(value);
+    exception = PyErr_Occurred();
+    if (exception) {
+        PyErr_SetString(exception, "Color correction factor must be a number, or False to disable");
         return -1;
     }
 
-    double factor = PyFloat_AsDouble(num);
-    Py_DECREF(num);
-
-    int ret = is_SetColorCorrection(self->handle, IS_CCOR_SET_IR_AUTOMATIC, &factor);
+    ret = is_SetColorCorrection(self->handle, IS_CCOR_SET_IR_AUTOMATIC, &factor);
     switch (ret) {
     case IS_SUCCESS:
         return 0;
@@ -663,7 +672,7 @@ static int ids_core_Camera_setcolor_correction(ids_core_Camera *self, PyObject *
         PyErr_SetString(PyExc_ValueError, "Color correction factor out of range (0 to 1)");
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Unable to set color correction factor.");
+        raise_general_error(self, ret);
         return -1;
     }
 
@@ -711,7 +720,7 @@ static int ids_core_Camera_setcontinuous_capture(ids_core_Camera *self,
             PyErr_SetString(PyExc_IOError, "No image memory available.");
             return -1;
         default:
-            PyErr_SetString(PyExc_IOError, "Unable to start continuous capture.");
+            raise_general_error(self, ret);
             return -1;
         }
     }
@@ -722,7 +731,7 @@ static int ids_core_Camera_setcontinuous_capture(ids_core_Camera *self,
         case IS_SUCCESS:
             break;
         default:
-            PyErr_SetString(PyExc_IOError, "Unable to stop continuous capture.");
+            raise_general_error(self, ret);
             return -1;
         }
     }

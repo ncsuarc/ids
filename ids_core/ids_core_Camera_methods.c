@@ -102,8 +102,9 @@ PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObje
 }
 
 static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    if (is_ExitCamera(self->handle) != IS_SUCCESS) {
-        PyErr_SetString(PyExc_IOError, "Unable to close camera");
+    int ret = is_ExitCamera(self->handle);
+    if (ret != IS_SUCCESS) {
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -159,30 +160,20 @@ static void warn_capture_status(ids_core_Camera *self) {
  * with exception set. */
 static int get_next_image(ids_core_Camera *self, char **mem, INT *image_id) {
     int ret;
-    int tries = 0;
 
-retry:
-    tries++;
     ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, mem, image_id); 
 
     switch (ret) {
     case IS_SUCCESS:
         break;
     case IS_TIMED_OUT:
-        printf("Warning: Capture timed out, retrying. ");
-        fflush(stdout);
-        if (tries < NUM_TRIES)
-            goto retry;
-        else {
-            PyErr_SetString(PyExc_IOError, "Too many timeout retries.");
-            return 1;
-        }
-    case IS_CAPTURE_STATUS: {
-        warn_capture_status(self);
-        goto retry;
-    }
+        PyErr_Format(IDSTimeoutError, "Timeout of %dms exceeded", IMG_TIMEOUT);
+        return 1;
+    case IS_CAPTURE_STATUS:
+        PyErr_SetString(IDSCaptureStatus, "Transfer error.  Check capture status.");
+        return 1;
     default:
-        PyErr_Format(PyExc_IOError,  "Failed to capture image on WaitForNextImage.  ret = %d", ret);
+        raise_general_error(self, ret);
         return 1;
     }
 
@@ -226,7 +217,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     case IS_SUCCESS:
         break;
     default:
-        PyErr_Format(PyExc_IOError, "Failed to save image. ret = %d", ret);
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -240,7 +231,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to unlock image memory.");
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -273,7 +264,7 @@ static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyO
     case IS_SUCCESS:
         break;
     default:
-        PyErr_SetString(PyExc_IOError, "Failed to unlock image memory.");
+        raise_general_error(self, ret);
         return NULL;
     }
 
@@ -327,7 +318,7 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
         break;
     }
     default:
-        PyErr_SetString(PyExc_NotImplementedError, "Unsupport color format for conversion to array.");
+        PyErr_SetString(PyExc_NotImplementedError, "Unsupported color format for conversion to array.");
         return NULL;
     }
 
