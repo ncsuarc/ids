@@ -147,3 +147,15 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
 
     return 0;
 }
+
+void raise_general_error(ids_core_Camera *self, int error) {
+    int ret, claimed_error;
+    char *message;
+
+    ret = is_GetError(self->handle, &claimed_error, &message);
+    if (ret != IS_SUCCESS || claimed_error != error) {
+        message = "Unknown error";
+    }
+
+    PyErr_Format(IDSError, "uEye SDK error %d: %s", error, message);
+}

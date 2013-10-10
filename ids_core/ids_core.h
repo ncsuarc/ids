@@ -42,6 +42,17 @@ PyObject *image_info(ids_core_Camera *self, int image_id);
 /* Exported method for freeing all memory */
 PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObject *kwds);
 
+/*
+ * Raise an exception for an unknown IDS error code.
+ *
+ * Attempts to lookup error message with is_GetError(),
+ * then raises an IDSError with the error code and message.
+ *
+ * @param self  Camera object
+ * @param error Error code returned from IDS function
+ */
+void raise_general_error(ids_core_Camera *self, int error);
+
 extern PyTypeObject ids_core_CameraType;
 extern PyMethodDef ids_core_Camera_methods[];
 extern PyGetSetDef ids_core_Camera_getseters[];
