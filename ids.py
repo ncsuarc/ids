@@ -24,6 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import ids_core
+import logging
 
 class Camera(ids_core.Camera):
     """
@@ -33,7 +34,10 @@ class Camera(ids_core.Camera):
         nummem: Number of memory locations to allocate for storing images
     """
 
-    def __init__(self, nummem=5, color=ids_core.COLOR_BGRA8):
+    def __init__(self, nummem=5, color=ids_core.COLOR_BGRA8, logger=None):
+        logging.basicConfig()   # Configure logging, if it isn't already
+        self.logger = logger or logging.getLogger(__name__)
+
         self.nummem = nummem
 
         # Constant, for now
@@ -46,6 +50,33 @@ class Camera(ids_core.Camera):
     def _allocate_memory(self):
         for i in range(self.nummem):
             self.alloc()
+
+    def _check_capture_status(self):
+        """
+        Check camera capture status, logging any warnings or errors detected.
+        """
+
+        status = self.capture_status()
+
+        if status['total'] == 0:
+            self.logger.info("Capture status total: %d" % status['total'])
+            return
+
+        self.logger.warning("Capture status total: %d" % status['total'])
+
+    def next(self):
+        while True:
+            try:
+                return super(Camera, self).next()
+            except ids_core.IDSCaptureStatus:
+                self._check_capture_status()
+
+    def next_save(self, filename, filetype=ids_core.FILETYPE_JPG):
+        while True:
+            try:
+                return super(Camera, self).next_save(filename, filetype=filetype)
+            except ids_core.IDSCaptureStatus:
+                self._check_capture_status()
 
     # Override color_mode to reallocate memory when changed
     @property
