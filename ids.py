@@ -55,14 +55,25 @@ class Camera(ids_core.Camera):
         """
         Check camera capture status, logging any warnings or errors detected.
         """
+        messages = {'total': None,
+                    'no_destination_mem': "Out of memory locations for images",
+                    'conversion_failed': "Image conversion failed",
+                    'image_locked': "Destination image memory locked",
+                    'no_driver_mem': "Out of internal memory",
+                    'device_not_available': "Camera not available",
+                    'usb_transfer_failed': "USB transfer failed",
+                    'device_timeout': "Camera timed out capturing image",
+                    'eth_buffer_overrun': "Camera internal buffers overrun",
+                    'eth_missed_images': "Image missed due to lack of bandwidth or processing power",
+                   }
 
         status = self.capture_status()
 
-        if status['total'] == 0:
-            self.logger.info("Capture status total: %d" % status['total'])
-            return
+        self.logger.info("%d total capture status warnings or errors" % status['total'])
 
-        self.logger.warning("Capture status total: %d" % status['total'])
+        for key, value in status.items():
+            if value and messages[key]:
+                self.logger.warning("%s (%d instances)" % (messages[key], value))
 
     def next(self):
         while True:
