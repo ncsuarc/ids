@@ -45,6 +45,50 @@
 
 static PyObject *create_matrix(ids_core_Camera *self, char *mem);
 
+static PyObject *ids_core_Camera_capture_status(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
+    int ret;
+    UEYE_CAPTURE_STATUS_INFO capture_status;
+
+    ret = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET,
+                           (void *)&capture_status, sizeof(capture_status));
+    if (ret != IS_SUCCESS) {
+        raise_general_error(self, ret);
+    }
+
+    PyObject *dict = PyDict_New();
+
+    PyDict_SetItemString(dict, "total", Py_BuildValue("I",
+            capture_status.dwCapStatusCnt_Total));
+
+    PyDict_SetItemString(dict, "no_destination_mem", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]));
+    PyDict_SetItemString(dict, "conversion_failed", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED]));
+    PyDict_SetItemString(dict, "image_locked", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED]));
+    PyDict_SetItemString(dict, "no_driver_mem", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS]));
+    PyDict_SetItemString(dict, "device_not_available", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY]));
+    PyDict_SetItemString(dict, "usb_transfer_failed", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED]));
+    PyDict_SetItemString(dict, "device_timeout", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT]));
+    PyDict_SetItemString(dict, "eth_buffer_overrun", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN]));
+    PyDict_SetItemString(dict, "eth_missed_images", Py_BuildValue("I",
+            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]));
+
+    /* Reset errors */
+    ret = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_RESET, NULL, 0);
+    if (ret != IS_SUCCESS) {
+        raise_general_error(self, ret);
+        return NULL;
+    }
+
+    return dict;
+}
+
 static int add_mem(ids_core_Camera *self, char *mem, int id) {
     struct allocated_mem *node = malloc(sizeof(struct allocated_mem));
     if (node == NULL) {
@@ -110,49 +154,6 @@ static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, Py
 
     Py_INCREF(Py_None);
     return Py_None;
-}
-
-static void warn_capture_status(ids_core_Camera *self) {
-    UEYE_CAPTURE_STATUS_INFO capture_status;
-    int r = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET, (void *) &capture_status, sizeof(capture_status));
-    if (r == IS_SUCCESS) {
-        if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]) {
-            printf("Warning: out of memory locations for images, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED]) {
-            printf("Warning: image conversion failed, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED]) {
-            printf("Warning: destination buffer locked, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS]) {
-            printf("Warning: no internal memory available, image lost, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY]) {
-            printf("Warning: camera not available, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED]) {
-            printf("Warning: transfer failed, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT]) {
-            printf("Warning: camera timed out, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN]) {
-            printf("Warning: camera buffer overflow, retrying. ");
-        }
-        else if (capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]) {
-            printf("Warning: missed %d image(s), retrying. ", capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
-        }
-        else {
-            printf("Warning: Capture Status, total: %d. ", capture_status.dwCapStatusCnt_Total);
-        }
-
-        is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_RESET, NULL, 0);
-    }
-    else {
-        printf("Warning: Capture Status failed. ");
-    }
-    fflush(stdout);
 }
 
 /* Gets next image with is_WaitForNextImage().
@@ -430,6 +431,13 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
 }
 
 PyMethodDef ids_core_Camera_methods[] = {
+    {"capture_status", (PyCFunction) ids_core_Camera_capture_status, METH_NOARGS,
+        "capture_status() -> status\n\n"
+        "Returns a dictionary of internal camera and driver errors.\n"
+        "Error counts reset every time this function is called.\n"
+        "Dictionary contains counts of occurrences of various internal errors,\n"
+        "which are documented in the IDS SDK is_CaptureStatus() documentation."
+    },
     {"alloc", (PyCFunction) ids_core_Camera_alloc, METH_NOARGS,
         "alloc()\n\n"
         "Allocates a single memory location for storing images.\n"
