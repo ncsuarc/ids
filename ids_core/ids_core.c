@@ -35,6 +35,11 @@
 
 #include "ids_core.h"
 
+/* IDS Exceptions */
+PyObject *IDSError;
+PyObject *IDSTimeoutError;
+PyObject *IDSCaptureStatus;
+
 #if PY_MAJOR_VERSION >= 3
 static struct PyModuleDef ids_coremodule = {
     PyModuleDef_HEAD_INIT,
@@ -83,6 +88,25 @@ PyMODINIT_FUNC initids_core(void) {
     PyModule_AddObject(m, "Camera", (PyObject *) &ids_core_CameraType);
 
     add_constants(m);
+
+    /* IDS Exceptions */
+    IDSError = PyErr_NewExceptionWithDoc("ids_core.IDSError",
+            "Base class for exceptions caused by an error with the IDS camera or libraries.",
+            NULL, NULL);
+    Py_INCREF(IDSError);
+    PyModule_AddObject(m, "IDSError", IDSError);
+
+    IDSTimeoutError = PyErr_NewExceptionWithDoc("ids_core.IDSTimeoutError",
+            "Raised when a camera operation times out.", IDSError, NULL);
+    Py_INCREF(IDSTimeoutError);
+    PyModule_AddObject(m, "IDSTimeoutError", IDSTimeoutError);
+
+    IDSCaptureStatus = PyErr_NewExceptionWithDoc("ids_core.IDSCaptureStatus",
+            "Raised to indicate that a transfer error occured, and that the "
+            "capture status can be queried for further information",
+            IDSError, NULL);
+    Py_INCREF(IDSCaptureStatus);
+    PyModule_AddObject(m, "IDSCaptureStatus", IDSCaptureStatus);
 
     #if PY_MAJOR_VERSION >= 3
     return m;

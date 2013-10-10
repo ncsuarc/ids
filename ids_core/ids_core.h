@@ -46,4 +46,9 @@ extern PyTypeObject ids_core_CameraType;
 extern PyMethodDef ids_core_Camera_methods[];
 extern PyGetSetDef ids_core_Camera_getseters[];
 
+/* IDS Exceptions */
+extern PyObject *IDSError;
+extern PyObject *IDSTimeoutError;
+extern PyObject *IDSCaptureStatus;
+
 #endif
