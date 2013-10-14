@@ -162,6 +162,40 @@ static int ids_core_Camera_setinfo(ids_core_Camera *self, PyObject *value, void 
     return -1;
 }
 
+PyObject *ids_core_Camera_getname(ids_core_Camera *self, void *closure) {
+    if (!self->name) {
+        PyObject *dict = ids_core_Camera_getinfo(self, NULL);
+        if (!dict) {
+            return NULL;
+        }
+
+        PyObject *manufacturer = PyDict_GetItemString(dict, "manufacturer");
+        if (!manufacturer) {
+            PyErr_SetString(PyExc_KeyError, "'manufacturer'");
+            return NULL;
+        }
+
+        PyObject *sensor = PyDict_GetItemString(dict, "sensor_name");
+        if (!sensor) {
+            PyErr_SetString(PyExc_KeyError, "'sensor_name'");
+            return NULL;
+        }
+
+        self->name = PyBytes_FromFormat("%s %s", PyBytes_AsString(manufacturer),
+                                        PyBytes_AsString(sensor));
+
+        Py_DECREF(dict);
+    }
+
+    Py_INCREF(self->name);
+    return self->name;
+}
+
+static int ids_core_Camera_setname(ids_core_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_TypeError, "Cannot modify attribute 'name'");
+    return -1;
+}
+
 static PyObject *ids_core_Camera_getwidth(ids_core_Camera *self, void *closure) {
     return PyLong_FromLong(self->width);
 }
@@ -744,6 +778,7 @@ static int ids_core_Camera_setcontinuous_capture(ids_core_Camera *self,
 
 PyGetSetDef ids_core_Camera_getseters[] = {
     {"info", (getter) ids_core_Camera_getinfo, (setter) ids_core_Camera_setinfo, "Camera info", NULL},
+    {"name", (getter) ids_core_Camera_getname, (setter) ids_core_Camera_setname, "Camera manufacturer and name", NULL},
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},

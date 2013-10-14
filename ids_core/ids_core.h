@@ -20,6 +20,11 @@ typedef struct {
     HIDS                    handle;
     uint32_t                width;
     uint32_t                height;
+    /*
+     * Lazily initialized name, ensure it is initialized before using!
+     * ids_core_Camera_getname() will initialize it.
+     */
+    PyObject                *name;
     /* Internal structures */
     LIST_HEAD(allocated_mem_head, allocated_mem) mem_list;
     int                     bitdepth;
@@ -41,6 +46,13 @@ PyObject *image_info(ids_core_Camera *self, int image_id);
 
 /* Exported method for freeing all memory */
 PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObject *kwds);
+
+/*
+ * Exported method to initialize camera name
+ *
+ * Initializes self->name and returns a new reference to the name
+ */
+PyObject *ids_core_Camera_getname(ids_core_Camera *self, void *closure);
 
 /*
  * Raise an exception for an unknown IDS error code.

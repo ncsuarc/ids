@@ -101,6 +101,7 @@ static void ids_core_Camera_dealloc(ids_core_Camera *self) {
 static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"width", "height", "handle", "color", NULL};
     self->handle = 0;
+    self->name = NULL;
     self->bitdepth = 0;
     self->color = IS_CM_BGRA8_PACKED;
     self->autofeatures = 0;

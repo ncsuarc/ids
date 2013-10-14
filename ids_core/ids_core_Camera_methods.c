@@ -376,8 +376,17 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
     }
 
     char *mem = PyArray_BYTES(matrix);
-
     TIFF *file = NULL;
+
+    /* Name is lazily initialized, ensure it has a value */
+    if (!self->name) {
+        PyObject *name = ids_core_Camera_getname(self, NULL);
+        if (!name) {
+            return NULL;
+        }
+
+        Py_DECREF(name);
+    }
 
     file = TIFFOpen(filename, "w");
 
@@ -388,7 +397,7 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
 
     TIFFSetField(file, TIFFTAG_IMAGEWIDTH, self->width);
     TIFFSetField(file, TIFFTAG_IMAGELENGTH, self->height);
-    TIFFSetField(file, TIFFTAG_UNIQUECAMERAMODEL, "IDS UI549xSE-C");
+    TIFFSetField(file, TIFFTAG_UNIQUECAMERAMODEL, PyBytes_AsString(self->name));
 
     TIFFSetField(file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
