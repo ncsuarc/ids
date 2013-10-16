@@ -354,10 +354,16 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
     case IS_CM_SENSOR_RAW8:
     case IS_CM_SENSOR_RAW12:
     case IS_CM_SENSOR_RAW16:
+#ifdef DNG_SUPPORT
         dng = 1;
         samples_per_pixel = 1;
         photometric = PHOTOMETRIC_CFA;
         break;
+#else
+        PyErr_SetString(PyExc_NotImplementedError,
+                "DNG support not built in.  Rebuild with -DDNG_SUPPORT.");
+        return NULL;
+#endif
     case IS_CM_MONO8:
     case IS_CM_MONO12:
     case IS_CM_MONO16:
@@ -399,6 +405,7 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
 
     /* If we are saving bayer data, this will be a DNG */
     if (dng) {
+#ifdef DNG_SUPPORT
         short cfapatterndim[] = {2,2};
         char  cfapattern[] = {0,1,1,2}; /* RGGB */
         const float cam_xyz[9] = /* Placeholder! Need to computer real values */
@@ -409,6 +416,7 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
         TIFFSetField(file, TIFFTAG_COLORMATRIX1, 9, cam_xyz);
         TIFFSetField(file, TIFFTAG_DNGVERSION, "\001\001\0\0");
         TIFFSetField(file, TIFFTAG_DNGBACKWARDVERSION, "\001\0\0\0");
+#endif
     }
 
     for (int row = 0; row < self->height; row++) {
