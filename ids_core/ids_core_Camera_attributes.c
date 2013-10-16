@@ -31,7 +31,7 @@
 
 #include "ids_core.h"
 
-static PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
+PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
     CAMINFO cam_info;
     SENSORINFO sensor_info;
 
@@ -163,30 +163,6 @@ static int ids_core_Camera_setinfo(ids_core_Camera *self, PyObject *value, void 
 }
 
 PyObject *ids_core_Camera_getname(ids_core_Camera *self, void *closure) {
-    if (!self->name) {
-        PyObject *dict = ids_core_Camera_getinfo(self, NULL);
-        if (!dict) {
-            return NULL;
-        }
-
-        PyObject *manufacturer = PyDict_GetItemString(dict, "manufacturer");
-        if (!manufacturer) {
-            PyErr_SetString(PyExc_KeyError, "'manufacturer'");
-            return NULL;
-        }
-
-        PyObject *sensor = PyDict_GetItemString(dict, "sensor_name");
-        if (!sensor) {
-            PyErr_SetString(PyExc_KeyError, "'sensor_name'");
-            return NULL;
-        }
-
-        self->name = PyBytes_FromFormat("%s %s", PyBytes_AsString(manufacturer),
-                                        PyBytes_AsString(sensor));
-
-        Py_DECREF(dict);
-    }
-
     Py_INCREF(self->name);
     return self->name;
 }

@@ -378,16 +378,6 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
     char *mem = PyArray_BYTES(matrix);
     TIFF *file = NULL;
 
-    /* Name is lazily initialized, ensure it has a value */
-    if (!self->name) {
-        PyObject *name = ids_core_Camera_getname(self, NULL);
-        if (!name) {
-            return NULL;
-        }
-
-        Py_DECREF(name);
-    }
-
     file = TIFFOpen(filename, "w");
 
     if (file == NULL) {

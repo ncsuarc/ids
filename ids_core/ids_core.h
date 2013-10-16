@@ -48,11 +48,9 @@ PyObject *image_info(ids_core_Camera *self, int image_id);
 PyObject *ids_core_Camera_free_all(ids_core_Camera *self, PyObject *args, PyObject *kwds);
 
 /*
- * Exported method to initialize camera name
- *
- * Initializes self->name and returns a new reference to the name
+ * Exported method to get camera info
  */
-PyObject *ids_core_Camera_getname(ids_core_Camera *self, void *closure);
+PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure);
 
 /*
  * Raise an exception for an unknown IDS error code.

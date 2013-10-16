@@ -98,10 +98,58 @@ static void ids_core_Camera_dealloc(ids_core_Camera *self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/*
+ * Initialize camera info
+ *
+ * Looks up camera name, width, and height, and initializes
+ * the Camera object with it.
+ */
+static int init_cam_info(ids_core_Camera *self) {
+    PyObject *info, *width, *height, *manufacturer, *sensor;
+
+    info = ids_core_Camera_getinfo(self, NULL);
+    if (!info) {
+        return -1;
+    }
+
+    width = PyDict_GetItemString(info, "max_width");
+    if (!width) {
+        PyErr_SetString(PyExc_KeyError, "'max_width'");
+        return -1;
+    }
+
+    height = PyDict_GetItemString(info, "max_height");
+    if (!width) {
+        PyErr_SetString(PyExc_KeyError, "'max_height'");
+        return -1;
+    }
+
+    manufacturer = PyDict_GetItemString(info, "manufacturer");
+    if (!manufacturer) {
+        PyErr_SetString(PyExc_KeyError, "'manufacturer'");
+        return -1;
+    }
+
+    sensor = PyDict_GetItemString(info, "sensor_name");
+    if (!sensor) {
+        PyErr_SetString(PyExc_KeyError, "'sensor_name'");
+        return -1;
+    }
+
+    Py_DECREF(info);
+
+    self->width = PyLong_AsLong(width);
+    self->height = PyLong_AsLong(height);
+
+    self->name = PyBytes_FromFormat("%s %s", PyBytes_AsString(manufacturer),
+                                    PyBytes_AsString(sensor));
+
+    return 0;
+}
+
 static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"width", "height", "handle", "color", NULL};
+    static char *kwlist[] = {"handle", "color", NULL};
     self->handle = 0;
-    self->name = NULL;
     self->bitdepth = 0;
     self->color = IS_CM_BGRA8_PACKED;
     self->autofeatures = 0;
@@ -110,10 +158,10 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
 
     /*
      * This means the definition is:
-     * def __init__(self, width, height, handle=0, color=ids_core.COLOR_BGA8):
+     * def __init__(self, handle=0, color=ids_core.COLOR_BGRA8):
      */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "II|ii", kwlist,
-            &self->width, &self->height, &self->handle, &self->color)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist,
+            &self->handle, &self->color)) {
         return -1;
     }
 
@@ -141,6 +189,12 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
     /* Initialize image queue so we can WaitForNextImage */
     if (is_InitImageQueue(self->handle, 0) != IS_SUCCESS) {
         PyErr_SetString(PyExc_IOError, "Unable to start image queue.");
+        return -1;
+    }
+
+    /* Lookup maximum width, height, and name */
+    ret = init_cam_info(self);
+    if (ret) {
         return -1;
     }
 

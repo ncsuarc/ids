@@ -40,10 +40,7 @@ class Camera(ids_core.Camera):
 
         self.nummem = nummem
 
-        # Constant, for now
-        width = 3840
-        height = 2748
-        super(Camera, self).__init__(width, height, color=color)
+        super(Camera, self).__init__(color=color)
 
         self._allocate_memory()
 
