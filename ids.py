@@ -23,8 +23,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import ids_core
 import logging
+import ids_core
+from ids_core import number_cameras, camera_list
 
 class Camera(ids_core.Camera):
     """
@@ -102,9 +103,3 @@ class Camera(ids_core.Camera):
         # Free all memory and reallocate, as bitdepth may have changed
         self.free_all()
         self._allocate_memory()
-
-def number_cameras():
-    return ids_core.number_cameras()
-
-def camera_list():
-    return ids_core.camera_list()
