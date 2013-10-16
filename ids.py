@@ -31,16 +31,17 @@ class Camera(ids_core.Camera):
     IDS Camera object
 
     Arguments:
+        logger: logging object to use for log output
         nummem: Number of memory locations to allocate for storing images
     """
 
-    def __init__(self, nummem=5, color=ids_core.COLOR_BGRA8, logger=None):
+    def __init__(self, *args, **kwargs):
         logging.basicConfig()   # Configure logging, if it isn't already
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = kwargs.pop('logger', None) or logging.getLogger(__name__)
 
-        self.nummem = nummem
+        self.nummem = kwargs.pop('nummem', 5)
 
-        super(Camera, self).__init__(color=color)
+        super(Camera, self).__init__(*args, **kwargs)
 
         self._allocate_memory()
 
