@@ -151,14 +151,14 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
     static char *kwlist[] = {"handle", "color", NULL};
     self->handle = 0;
     self->bitdepth = 0;
-    self->color = IS_CM_BGRA8_PACKED;
+    self->color = IS_CM_RGB8_PACKED;
     self->autofeatures = 0;
     self->ready = NOT_READY;
     LIST_INIT(&self->mem_list);
 
     /*
      * This means the definition is:
-     * def __init__(self, handle=0, color=ids_core.COLOR_BGRA8):
+     * def __init__(self, handle=0, color=ids_core.COLOR_RGB8):
      */
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|ii", kwlist,
             &self->handle, &self->color)) {
