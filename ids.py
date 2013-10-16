@@ -31,9 +31,18 @@ class Camera(ids_core.Camera):
     """
     IDS Camera object
 
+    Provides access to, and control of, IDS machine vision cameras.  This
+    class provides as attributes many of the camera settings.  It handles
+    image capture internally, and provides methods to get images from the
+    camera.
+
     Arguments:
-        logger: logging object to use for log output
-        nummem: Number of memory locations to allocate for storing images
+        logger (optional): logging object to use for log output.
+        nummem (optional): Number of memory locations to allocate for storing
+            images.
+        handle (optional): Image handle to connect to.
+        color (optional): Default color mode.  One of ids_core.COLOR_*
+            constants.
     """
 
     def __init__(self, *args, **kwargs):
@@ -75,22 +84,69 @@ class Camera(ids_core.Camera):
                 self.logger.warning("%s (%d instances)" % (messages[key], value))
 
     def next(self):
+        """
+        Get the next available image from the camera.
+
+        Waits for the next image to be available from the camera, and returns
+        it as a numpy array.  Blocks until image is available, or timeout is
+        reached.
+
+        Returns:
+            (image, metadata) tuple, where image is a numpy array containing
+            the image in the camera color format, and metadata is a dictionary
+            with image metadata.
+
+        Raises:
+            IDSTimeoutError: An image was not available within the timeout.
+            IDSError: An unknown error occured in an IDS function.
+            NotImplementedError: The current color format cannot be converted
+                to a numpy array.
+        """
         while True:
             try:
                 return super(Camera, self).next()
             except ids_core.IDSCaptureStatus:
                 self._check_capture_status()
 
-    def next_save(self, filename, filetype=ids_core.FILETYPE_JPG):
+    def next_save(self, *args, **kwargs):
+        """
+        Save the next available image to a file.
+
+        This function behaves similarly to Camera.next(), however instead
+        of returning the image, it uses the IDS functions to save the image
+        to a file.
+
+        Arguments:
+            filename: File to save image to.
+            filetype (optional): Filetype to save as, defaults to
+                ids_core.FILETYPE_JPG.
+
+        Returns:
+            Dictonary containing image metadata.
+
+        Raises:
+            ValueError: An invalid filetype was passed in.
+            IDSTimeoutError: An image was not available within the timeout.
+            IDSError: An unknown error occured in an IDS function.
+        """
         while True:
             try:
-                return super(Camera, self).next_save(filename, filetype=filetype)
+                return super(Camera, self).next_save(*args, **kwargs)
             except ids_core.IDSCaptureStatus:
                 self._check_capture_status()
 
     # Override color_mode to reallocate memory when changed
     @property
     def color_mode(self):
+        """
+        Color mode used for capturing images.
+
+        One of ids_core.COLOR_* constants.  Image memory will be reallocated
+        after changing color mode, as the memory requirements may change.
+
+        Raises:
+            IOError: Color mode cannot be changed while capturing images.
+        """
         return ids_core.Camera.color_mode.__get__(self)
 
     @color_mode.setter
