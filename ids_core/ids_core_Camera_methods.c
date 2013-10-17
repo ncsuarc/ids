@@ -440,15 +440,21 @@ static PyObject *ids_core_Camera_save_tiff(ids_core_Camera *self, PyObject *args
 PyMethodDef ids_core_Camera_methods[] = {
     {"capture_status", (PyCFunction) ids_core_Camera_capture_status, METH_NOARGS,
         "capture_status() -> status\n\n"
-        "Returns a dictionary of internal camera and driver errors.\n"
-        "Error counts reset every time this function is called.\n"
+        "Get internal camera and driver errors\n\n"
         "Dictionary contains counts of occurrences of various internal errors,\n"
-        "which are documented in the IDS SDK is_CaptureStatus() documentation."
+        "which are documented in the IDS SDK is_CaptureStatus() documentation.\n\n"
+        "Error counts reset every time this function is called.\n\n"
+        "Returns:\n"
+        "    Dictionary of internal camera and driver errors.\n\n"
+        "Raises:\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
     },
     {"alloc", (PyCFunction) ids_core_Camera_alloc, METH_NOARGS,
         "alloc()\n\n"
         "Allocates a single memory location for storing images.\n"
-        "Memory locations must be allocated before capturing images."
+        "Memory locations must be allocated before capturing images.\n\n"
+        "Raises:\n"
+        "    MemoryError: Unable to allocate memory."
     },
     {"free_all", (PyCFunction) ids_core_Camera_free_all, METH_NOARGS,
         "free_all()\n\n"
@@ -456,23 +462,57 @@ PyMethodDef ids_core_Camera_methods[] = {
     },
     {"close", (PyCFunction) ids_core_Camera_close, METH_NOARGS,
         "close()\n\n"
-        "Closes open camera"
+        "Closes open camera.\n\n"
+        "Raises:\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
     },
     {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS,
         "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\n"
-        "Saves next image in buffer and returns metadata from camera."
+        "Saves next available image.\n\n"
+        "Using the uEye SDK image saving functions to save the next available\n"
+        "image to disk.  Blocks until image is available, or timeout occurs.\n\n"
+        "Arguments:\n"
+        "    filename: File to save image to.\n"
+        "    filetype: Filetype to save as, one of ids_core.FILETYPE_*\n\n"
+        "Returns:\n"
+        "    Dictionary containing image metadata\n\n"
+        "Raises:\n"
+        "    ValueError: Invalid filetype.\n"
+        "    IDSTimeoutError: An image was not available within the timeout.\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
     },
     {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS,
         "next() -> image, metadata\n\n"
-        "Returns next image in buffer as a numpy array and metadata from camera."
+        "Gets next available image.\n\n"
+        "Gets the next available image from the camera as a Numpy array\n"
+        "Blocks until image is available, or timeout occurs.\n\n"
+        "Returns:\n"
+        "    (image, metadata) tuple, where image is a Numpy array containing\n"
+        "    the image, and metadata is a dictionary containing image metadata.\n\n"
+        "Raises:\n"
+        "    IDSTimeoutError: An image was not available within the timeout.\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
+        "    NotImplementedError: The current color format cannot be converted\n"
+        "        to a numpy array."
     },
     {"save_tiff", (PyCFunction) ids_core_Camera_save_tiff, METH_VARARGS,
         "save_tiff(image, filename)\n\n"
-        "Save a captured image as a tiff.  Image must be a numpy array,\n"
-        "and is expected to be one returned from next().\n"
+        "Save a captured image as a tiff.\n\n"
         "If the color mode is currently bayer, the image will be saved as a RAW DNG,\n"
-        "a subset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n"
-        "Non bayer images must be ids_core.COLOR_RGB8 or ids_core.COLOR_MONO*."
+        "a superset of TIFF.  Otherwise, it will be saved as a standard TIFF.\n"
+        "Non bayer images must be ids_core.COLOR_RGB8 or ids_core.COLOR_MONO*.\n"
+        "The color mode should not be changed between capturing an image and\n"
+        "using this function to save it, or the image may be corrupted.\n\n"
+        "Arguments:\n"
+        "    image: Image to save.  This should be a Numpy array returned from\n"
+        "        Camera.next().\n"
+        "    filename: Destination file to save TIFF to.\n\n"
+        "Raises:\n"
+        "    TypeError: image is not the appropriate format.\n"
+        "    ValueError: Color format cannot be saved as TIFF.\n"
+        "    IOError: file could not be written.\n"
+        "    NotImplementedError: DNG support not built into module.\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
     },
     {NULL}
 };

@@ -98,7 +98,7 @@ class Camera(ids_core.Camera):
 
         Raises:
             IDSTimeoutError: An image was not available within the timeout.
-            IDSError: An unknown error occured in an IDS function.
+            IDSError: An unknown error occured in the uEye SDK.
             NotImplementedError: The current color format cannot be converted
                 to a numpy array.
         """
@@ -114,7 +114,8 @@ class Camera(ids_core.Camera):
 
         This function behaves similarly to Camera.next(), however instead
         of returning the image, it uses the IDS functions to save the image
-        to a file.
+        to a file.  The appropriate color mode for the filetype should be
+        used (eg. BGR for JPEG).
 
         Arguments:
             filename: File to save image to.
@@ -127,7 +128,7 @@ class Camera(ids_core.Camera):
         Raises:
             ValueError: An invalid filetype was passed in.
             IDSTimeoutError: An image was not available within the timeout.
-            IDSError: An unknown error occured in an IDS function.
+            IDSError: An unknown error occured in the uEye SDK.
         """
         while True:
             try:

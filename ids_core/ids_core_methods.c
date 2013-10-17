@@ -93,7 +93,22 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
 }
 
 PyMethodDef ids_coreMethods[] = {
-    {"number_cameras", ids_core_number_cameras, METH_VARARGS, "number_cameras() -> number of cameras connected."},
-    {"camera_list", ids_core_camera_list, METH_VARARGS, "camera_list() -> list of cameras with metadata."},
+    {"number_cameras", ids_core_number_cameras, METH_VARARGS,
+        "number_cameras() -> number of cameras connected\n\n"
+        "Determines total number of cameras available.\n\n"
+        "Returns:\n"
+        "    Total number of cameras available.\n\n"
+        "Raises:\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
+    },
+    {"camera_list", ids_core_camera_list, METH_VARARGS,
+        "camera_list() -> list of cameras available\n\n"
+        "Gets information on all available cameras, including camera handle,\n"
+        "which can be used to select a camera to open.\n\n"
+        "Returns:\n"
+        "    List of dictionaries with information for each available camera.\n\n"
+        "Raises:\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
+    },
     {NULL, NULL, 0, NULL}
 };

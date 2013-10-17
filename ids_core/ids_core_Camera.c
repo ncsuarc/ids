@@ -59,12 +59,15 @@ PyTypeObject ids_core_CameraType = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    "Camera([handle=0, nummem=3, color=ids_core.COLOR_BGRA8]) -> Camera object\n\n"
-    "Handle allows selection of camera to connect to.\n"
-    "nummem is the number of image memory buffers to create for image storage.\n"
-    "Color is the color space in which to store images.\n"
-    "This can only be changed after initialization with Camera.color if it won't\n"
-    "change the bitdepth, as that would require the size of the memory buffers change.",       /* tp_doc */
+    "Camera([handle=0, color=ids_core.COLOR_RGB8]) -> Camera object\n\n"
+    "Wrapper object for IDS uEye SDK.  Provides a simpler interface to\n"
+    "use for controlling cameras.  Exposes various camera settings as\n"
+    "attributes, and provides methods for capturing images from the camera.\n\n"
+    "Arguments:\n"
+    "    handle: Camera handle to connect to.  Determine camera handle from\n"
+    "        ids_core.camera_list().\n"
+    "    color: Initial color mode to use for capturing images.  Can be\n"
+    "        modified with color_mode attribute.",       /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
