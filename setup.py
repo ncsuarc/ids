@@ -42,8 +42,9 @@ ids_core = Extension("ids_core",
                      ])
 
 setup(name = 'ids',
-      version = '0.9',
-      description = 'Wrapper for IDS ueye library',
-      author = 'Michael Pratt',
+      version = '1.0',
+      description = 'Interface for IDS machine vision cameras',
+      author = 'NC State Aerial Robotics Club',
+      license = 'BSD',
       py_modules = ['ids'],
       ext_modules = [ids_core])
