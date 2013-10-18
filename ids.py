@@ -77,7 +77,7 @@ class Camera(ids_core.Camera):
 
         status = self.capture_status()
 
-        self.logger.info("%d total capture status warnings or errors" % status['total'])
+        self.logger.debug("%d total capture status warnings or errors" % status['total'])
 
         for key, value in status.items():
             if value and messages[key]:
