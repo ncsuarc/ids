@@ -121,6 +121,8 @@ class Camera(ids_core.Camera):
             filename: File to save image to.
             filetype (optional): Filetype to save as, defaults to
                 ids_core.FILETYPE_JPG.
+            quality (optional): Image quality for JPEG and PNG,
+                with 100 as maximum quality.
 
         Returns:
             Dictonary containing image metadata.

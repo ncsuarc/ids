@@ -182,12 +182,13 @@ static int get_next_image(ids_core_Camera *self, char **mem, INT *image_id) {
 }
 
 static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    static char *kwlist[] = {"filename", "filetype", NULL};
+    static char *kwlist[] = {"filename", "filetype", "quality", NULL};
     char *filename;
     wchar_t fancy_filename[256];
     int filetype = IS_IMG_JPG;
+    unsigned int quality = 100;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|i", kwlist, &filename, &filetype)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|iI", kwlist, &filename, &filetype, &quality)) {
         return NULL;
     }
 
@@ -210,7 +211,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     IMAGE_FILE_PARAMS ImageFileParams;
     ImageFileParams.pwchFileName = fancy_filename;
     ImageFileParams.nFileType = filetype;
-    ImageFileParams.nQuality = 100;
+    ImageFileParams.nQuality = quality;
     ImageFileParams.ppcImageMem = &mem;
     ImageFileParams.pnImageID = (UINT*) &image_id;
     ret = is_ImageFile(self->handle, IS_IMAGE_FILE_CMD_SAVE, (void*)&ImageFileParams, sizeof(ImageFileParams));
@@ -467,13 +468,14 @@ PyMethodDef ids_core_Camera_methods[] = {
         "    IDSError: An unknown error occured in the uEye SDK."
     },
     {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS,
-        "next_save(filename [, filetype=ids_core.FILETYPE_JPG]) -> metadata\n\n"
+        "next_save(filename [, filetype=ids_core.FILETYPE_JPG, quality=100]) -> metadata\n\n"
         "Saves next available image.\n\n"
         "Using the uEye SDK image saving functions to save the next available\n"
         "image to disk.  Blocks until image is available, or timeout occurs.\n\n"
         "Arguments:\n"
         "    filename: File to save image to.\n"
-        "    filetype: Filetype to save as, one of ids_core.FILETYPE_*\n\n"
+        "    filetype: Filetype to save as, one of ids_core.FILETYPE_*\n"
+        "    quality: Image quality for JPEG and PNG, with 100 as maximum quality\n\n"
         "Returns:\n"
         "    Dictionary containing image metadata\n\n"
         "Raises:\n"
