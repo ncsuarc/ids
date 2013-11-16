@@ -50,7 +50,7 @@ for these tags.  This patch has been merged into the libtiff trunk, and should
 be included in the release following 4.0.3.
 
 To patch libtiff, first grab the latest version from the libtiff
-[website](http://en.ids-imaging.com/download-ueye.html).  If this is > 4.0.3,
+[website](http://www.remotesensing.org/libtiff/).  If this is > 4.0.3,
 the DNG patch should be included, and you can simply build and install this
 version.
 
