@@ -45,11 +45,12 @@ static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args) {
 
 static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
     int num_cams, ret;
-    UEYE_CAMERA_LIST    *cameras;
+    UEYE_CAMERA_LIST *cameras;
     PyObject *list = PyList_New(0);
 
     ret = is_GetNumberOfCameras(&num_cams);
     if (ret != IS_SUCCESS) {
+        Py_DECREF(list);
         PyErr_Format(IDSError, "uEye SDK error %d", ret);
         return NULL;
     }
@@ -71,6 +72,7 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
 
     ret = is_GetCameraList(cameras);
     if (ret != IS_SUCCESS) {
+        Py_DECREF(list);
         PyErr_Format(IDSError, "uEye SDK error %d", ret);
         return NULL;
     }
@@ -78,15 +80,33 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
     for (int i = 0; i < cameras->dwCount; i++) {
         PyObject *camera_info = PyDict_New();
 
-        PyDict_SetItemString(camera_info, "camera_id", Py_BuildValue("I", cameras->uci[i].dwCameraID));
-        PyDict_SetItemString(camera_info, "device_id", Py_BuildValue("I", cameras->uci[i].dwDeviceID));
-        PyDict_SetItemString(camera_info, "sensor_id", Py_BuildValue("I", cameras->uci[i].dwSensorID));
-        PyDict_SetItemString(camera_info, "in_use", Py_BuildValue("I", cameras->uci[i].dwInUse));
-        PyDict_SetItemString(camera_info, "serial_number", Py_BuildValue("s", cameras->uci[i].SerNo));
-        PyDict_SetItemString(camera_info, "model", Py_BuildValue("s", cameras->uci[i].Model));
-        PyDict_SetItemString(camera_info, "status", Py_BuildValue("I", cameras->uci[i].dwStatus));
+        PyObject *camera_id = Py_BuildValue("I", cameras->uci[i].dwCameraID);
+        PyObject *device_id = Py_BuildValue("I", cameras->uci[i].dwDeviceID);
+        PyObject *sensor_id = Py_BuildValue("I", cameras->uci[i].dwSensorID);
+        PyObject *in_use = Py_BuildValue("I", cameras->uci[i].dwInUse);
+        PyObject *serial_number = Py_BuildValue("s", cameras->uci[i].SerNo);
+        PyObject *model = Py_BuildValue("s", cameras->uci[i].Model);
+        PyObject *status = Py_BuildValue("I", cameras->uci[i].dwStatus);
+
+        PyDict_SetItemString(camera_info, "camera_id", camera_id);
+        PyDict_SetItemString(camera_info, "device_id", device_id);
+        PyDict_SetItemString(camera_info, "sensor_id", sensor_id);
+        PyDict_SetItemString(camera_info, "in_use", in_use);
+        PyDict_SetItemString(camera_info, "serial_number", serial_number);
+        PyDict_SetItemString(camera_info, "model", model);
+        PyDict_SetItemString(camera_info, "status", status);
+
+        Py_DECREF(camera_id);
+        Py_DECREF(device_id);
+        Py_DECREF(sensor_id);
+        Py_DECREF(in_use);
+        Py_DECREF(serial_number);
+        Py_DECREF(model);
+        Py_DECREF(status);
 
         PyList_Append(list, camera_info);
+
+        Py_DECREF(camera_info);
     }
 
     return list;

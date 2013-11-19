@@ -139,13 +139,13 @@ static int init_cam_info(ids_core_Camera *self) {
         return -1;
     }
 
-    Py_DECREF(info);
-
     self->width = PyLong_AsLong(width);
     self->height = PyLong_AsLong(height);
 
     self->name = PyBytes_FromFormat("%s %s", PyBytes_AsString(manufacturer),
                                     PyBytes_AsString(sensor));
+
+    Py_DECREF(info);
 
     return 0;
 }

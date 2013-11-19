@@ -49,110 +49,124 @@ PyObject *ids_core_Camera_getinfo(ids_core_Camera *self, void *closure) {
 
     PyObject *dict = PyDict_New();
 
-    PyDict_SetItemString(dict, "serial_num", PyBytes_FromString(cam_info.SerNo));
-    PyDict_SetItemString(dict, "manufacturer", PyBytes_FromString(cam_info.ID));
-    PyDict_SetItemString(dict, "hw_version", PyBytes_FromString(cam_info.Version));
-    PyDict_SetItemString(dict, "manufacture_date", PyBytes_FromString(cam_info.Date));
-    PyDict_SetItemString(dict, "id", Py_BuildValue("B", cam_info.Select));
+    PyObject *serial_num = PyBytes_FromString(cam_info.SerNo);
+    PyObject *manufacturer = PyBytes_FromString(cam_info.ID);
+    PyObject *hw_version = PyBytes_FromString(cam_info.Version);
+    PyObject *manufacture_date = PyBytes_FromString(cam_info.Date);
+    PyObject *id = Py_BuildValue("B", cam_info.Select);
+    PyObject *sensor_id = Py_BuildValue("H", sensor_info.SensorID);
+    PyObject *sensor_name = PyBytes_FromString(sensor_info.strSensorName);
+    PyObject *max_width = Py_BuildValue("I", sensor_info.nMaxWidth);
+    PyObject *max_height = Py_BuildValue("I", sensor_info.nMaxHeight);
+    PyObject *pixel_size = Py_BuildValue("d", sensor_info.wPixelSize/100.0);
 
+    PyObject *type;
     switch (cam_info.Type) {
     case IS_CAMERA_TYPE_UEYE_USB_SE:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye SE or RE"));
+        type = PyBytes_FromString("USB uEye SE or RE");
         break;
     case IS_CAMERA_TYPE_UEYE_USB_ME:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye ME"));
+        type = PyBytes_FromString("USB uEye ME");
         break;
     case IS_CAMERA_TYPE_UEYE_USB_LE:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB uEye LE"));
+        type = PyBytes_FromString("USB uEye LE");
         break;
     case IS_CAMERA_TYPE_UEYE_USB3_CP:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("USB 3 uEye CP"));
+        type = PyBytes_FromString("USB 3 uEye CP");
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_HE:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye HE"));
+        type = PyBytes_FromString("GigE uEye HE");
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_SE:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye SE or RE"));
+        type = PyBytes_FromString("GigE uEye SE or RE");
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_LE:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye LE"));
+        type = PyBytes_FromString("GigE uEye LE");
         break;
     case IS_CAMERA_TYPE_UEYE_ETH_CP:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("GigE uEye CP"));
+        type = PyBytes_FromString("GigE uEye CP");
         break;
     default:
-        PyDict_SetItemString(dict, "type", PyBytes_FromString("Unknown"));
+        type = PyBytes_FromString("Unknown");
     }
 
-    PyDict_SetItemString(dict, "sensor_id", Py_BuildValue("H", sensor_info.SensorID));
-    PyDict_SetItemString(dict, "sensor_name", PyBytes_FromString(sensor_info.strSensorName));
-
+    PyObject *color_mode;
     switch (sensor_info.nColorMode) {
     case IS_COLORMODE_BAYER:
-        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Bayer"));
+        color_mode = PyBytes_FromString("Bayer");
         break;
     case IS_COLORMODE_MONOCHROME:
-        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Monochrome"));
+        color_mode = PyBytes_FromString("Monochrome");
         break;
     case IS_COLORMODE_CBYCRY:
-        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("CBYCRY"));
+        color_mode = PyBytes_FromString("CBYCRY");
         break;
     default:
-        PyDict_SetItemString(dict, "color_mode", PyBytes_FromString("Unknown"));
+        color_mode = PyBytes_FromString("Unknown");
     }
 
-    PyDict_SetItemString(dict, "max_width", Py_BuildValue("I", sensor_info.nMaxWidth));
-    PyDict_SetItemString(dict, "max_height", Py_BuildValue("I", sensor_info.nMaxHeight));
+    PyDict_SetItemString(dict, "serial_num", serial_num);
+    PyDict_SetItemString(dict, "manufacturer", manufacturer);
+    PyDict_SetItemString(dict, "hw_version", hw_version);
+    PyDict_SetItemString(dict, "manufacture_date", manufacture_date);
+    PyDict_SetItemString(dict, "id", id);
+    PyDict_SetItemString(dict, "sensor_id", sensor_id);
+    PyDict_SetItemString(dict, "sensor_name", sensor_name);
+    PyDict_SetItemString(dict, "max_width", max_width);
+    PyDict_SetItemString(dict, "max_height", max_height);
+    PyDict_SetItemString(dict, "type", type);
+    PyDict_SetItemString(dict, "color_mode", color_mode);
+    PyDict_SetItemString(dict, "pixel_size", pixel_size);   /* in um */
 
     /* Gains */
     if (sensor_info.bMasterGain) {
-        Py_INCREF(Py_True);
         PyDict_SetItemString(dict, "master_gain", Py_True);
     }
     else {
-        Py_INCREF(Py_False);
         PyDict_SetItemString(dict, "master_gain", Py_False);
     }
 
     if (sensor_info.bRGain) {
-        Py_INCREF(Py_True);
         PyDict_SetItemString(dict, "red_gain", Py_True);
     }
     else {
-        Py_INCREF(Py_False);
         PyDict_SetItemString(dict, "red_gain", Py_False);
     }
 
     if (sensor_info.bGGain) {
-        Py_INCREF(Py_True);
         PyDict_SetItemString(dict, "green_gain", Py_True);
     }
     else {
-        Py_INCREF(Py_False);
         PyDict_SetItemString(dict, "green_gain", Py_False);
     }
 
     if (sensor_info.bBGain) {
-        Py_INCREF(Py_True);
         PyDict_SetItemString(dict, "blue_gain", Py_True);
     }
     else {
-        Py_INCREF(Py_False);
         PyDict_SetItemString(dict, "blue_gain", Py_False);
     }
 
     /* Global shutter, rolling if false */
     if (sensor_info.bGlobShutter) {
-        Py_INCREF(Py_True);
         PyDict_SetItemString(dict, "global_shutter", Py_True);
     }
     else {
-        Py_INCREF(Py_False);
         PyDict_SetItemString(dict, "global_shutter", Py_False);
     }
 
-    /* Pixel size in um */
-    PyDict_SetItemString(dict, "pixel_size", Py_BuildValue("d", sensor_info.wPixelSize/100.0));
+    Py_DECREF(serial_num);
+    Py_DECREF(manufacturer);
+    Py_DECREF(hw_version);
+    Py_DECREF(manufacture_date);
+    Py_DECREF(id);
+    Py_DECREF(sensor_id);
+    Py_DECREF(sensor_name);
+    Py_DECREF(max_width);
+    Py_DECREF(max_height);
+    Py_DECREF(type);
+    Py_DECREF(color_mode);
+    Py_DECREF(pixel_size);
 
     return dict;
 }
