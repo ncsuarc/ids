@@ -30,7 +30,7 @@ from distutils.core import setup, Extension
 ids_core = Extension("ids_core",
                      extra_compile_args = ['-std=gnu99', '-g3'],
                      library_dirs = ['/usr/local/lib/'],
-                     libraries = ['ueye_api', 'm', 'z', 'tiff'],
+                     libraries = ['ueye_api', 'm', 'z'],
                      sources = [
                             'ids_core/ids_core.c',
                             'ids_core/ids_core_methods.c',
