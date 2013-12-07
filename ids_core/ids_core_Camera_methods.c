@@ -36,8 +36,6 @@
 #define NO_IMPORT_ARRAY
 #include <numpy/arrayobject.h>
 
-#include "tiffio.h"
-
 #include "ids_core.h"
 
 #define IMG_TIMEOUT 3000

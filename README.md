@@ -49,12 +49,7 @@ You can get images from the camera as a Numpy array
 
     >>> img, meta = cam.next()                      # Get image as a Numpy array
 
-A built in method will save the images as TIFFs.  This is particularly useful
-for saving raw Bayer data as a DNG.
-
-    >>> cam.save_tiff(img, "image.tif")
-
-PIL also provides a wide range of formats to save in.
+PIL provides a wide range of formats to save in.
 
     >>> Import Image
     >>> pil_img = Image.fromarray(img)
@@ -67,8 +62,13 @@ OpenCV also allows you to save images.
     >>> cv2.imwrite('cv2.jpg', bgr_img) # cv2.imwrite takes a BGR image
 
 The [tiffutils](https://github.com/ncsuarc/tiffutils) module can be used to
-save raw bayer data as a DNG.
+save raw bayer data as a DNG.  Use one of the `ids.ids_core.COLOR_BAYER` color
+modes.
 
+    >>> cam.continuous_capture = False  # Stop capture to change color mode
+    >>> cam.color_mode = ids.ids_core.COLOR_BAYER_16
+    >>> cam.continuous_capture = True
+    >>> img, meta = cam.next()
     >>> import tiffutils
     >>> tiffutils.save_dng(img, "image.dng")
 
