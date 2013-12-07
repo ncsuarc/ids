@@ -60,28 +60,28 @@ PyMODINIT_FUNC initids_core(void) {
 
     ids_core_CameraType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&ids_core_CameraType) < 0) {
-        #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
         return NULL;
-        #else
+#else
         return;
-        #endif
+#endif
     }
 
     import_array();
     PyDateTime_IMPORT;
 
-    #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
     m = PyModule_Create(&ids_coremodule);
-    #else
+#else
     m = Py_InitModule("ids_core", ids_coreMethods);
-    #endif
+#endif
 
     if (m == NULL) {
-        #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
         return NULL;
-        #else
+#else
         return;
-        #endif
+#endif
     }
 
     Py_INCREF(&ids_core_CameraType);
@@ -108,19 +108,19 @@ PyMODINIT_FUNC initids_core(void) {
     Py_INCREF(IDSCaptureStatus);
     PyModule_AddObject(m, "IDSCaptureStatus", IDSCaptureStatus);
 
-    #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
     return m;
-    #endif
+#endif
 }
 
 int main(int argc, char *argv[]) {
-    #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
     wchar_t name[128];
     mbstowcs(name, argv[0], 128);
-    #else
+#else
     char name[128];
     strncpy(name, argv[0], 128);
-    #endif
+#endif
 
     /* Pass argv[0] to the Python interpreter */
     Py_SetProgramName(name);
@@ -129,11 +129,11 @@ int main(int argc, char *argv[]) {
     Py_Initialize();
 
     /* Add a static module */
-    #if PY_MAJOR_VERSION >= 3
+#if PY_MAJOR_VERSION >= 3
     PyInit_ids_core();
-    #else
+#else
     initids_core();
-    #endif
+#endif
 
     return 0;
 }
