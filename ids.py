@@ -94,7 +94,8 @@ class Camera(ids_core.Camera):
         Returns:
             (image, metadata) tuple, where image is a numpy array containing
             the image in the camera color format, and metadata is a dictionary
-            with image metadata.
+            with image metadata.  Timestamp is provided as a datetime object in
+            UTC.
 
         Raises:
             IDSTimeoutError: An image was not available within the timeout.
@@ -125,7 +126,8 @@ class Camera(ids_core.Camera):
                 with 100 as maximum quality.
 
         Returns:
-            Dictonary containing image metadata.
+            Dictonary containing image metadata.  Timestamp is provided as
+            a datetime object in UTC.
 
         Raises:
             ValueError: An invalid filetype was passed in.

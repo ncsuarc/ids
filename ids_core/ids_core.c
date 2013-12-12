@@ -138,9 +138,39 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/*
+ * Convert UEYETIME to UTC struct tm
+ *
+ * UEYETIME provides a timestamp in local time, convert it to UTC, and return
+ * the time as a struct tm.
+ *
+ * @param timestamp Pointer to UEYETIME timestamp
+ * @param dest  Destination struct tm for UTC time
+ */
+static void timestamp_to_utc(UEYETIME *timestamp, struct tm *dest) {
+    struct tm local;
+    struct tm *utc;
+    time_t utctime;
+
+    local.tm_year = timestamp->wYear - 1900;
+    local.tm_mon = timestamp->wMonth - 1;
+    local.tm_mday = timestamp->wDay;
+    local.tm_hour = timestamp->wHour;
+    local.tm_min = timestamp->wMinute;
+    local.tm_sec = timestamp->wSecond;
+    local.tm_isdst = -1;  /* Automatically determine */
+
+    /* mktime ignores tm_wday and tm_wyear */
+    utctime = mktime(&local);
+    utc = gmtime(&utctime);
+
+    memcpy(dest, utc, sizeof(*dest));
+}
+
 /* Stupid hack, needs DateTime, which gets clobbered in other files */
 PyObject *image_info(ids_core_Camera *self, int image_id) {
     UEYEIMAGEINFO image_info;
+    struct tm utc_timestamp;
 
     int ret = is_GetImageInfo(self->handle, image_id, &image_info, sizeof(image_info));
     switch (ret) {
@@ -151,10 +181,12 @@ PyObject *image_info(ids_core_Camera *self, int image_id) {
         return NULL;
     }
 
+    timestamp_to_utc(&image_info.TimestampSystem, &utc_timestamp);
+
     PyObject *info = PyDict_New();
 
     PyDict_SetItemString(info, "device_timestamp", Py_BuildValue("K", image_info.u64TimestampDevice));
-    PyDict_SetItemString(info, "timestamp", PyDateTime_FromDateAndTime(image_info.TimestampSystem.wYear, image_info.TimestampSystem.wMonth, image_info.TimestampSystem.wDay, image_info.TimestampSystem.wHour,  image_info.TimestampSystem.wMinute, image_info.TimestampSystem.wSecond, 1000*image_info.TimestampSystem.wMilliseconds));
+    PyDict_SetItemString(info, "timestamp", PyDateTime_FromDateAndTime(utc_timestamp.tm_year + 1900, utc_timestamp.tm_mon+1, utc_timestamp.tm_mday, utc_timestamp.tm_hour, utc_timestamp.tm_min, utc_timestamp.tm_sec, 1000*image_info.TimestampSystem.wMilliseconds));  /* Assume milliseconds the same */
     PyDict_SetItemString(info, "digital_input", Py_BuildValue("I", image_info.dwIoStatus&4));
     PyDict_SetItemString(info, "gpio1", Py_BuildValue("I", image_info.dwIoStatus&2));
     PyDict_SetItemString(info, "gpio2", Py_BuildValue("I", image_info.dwIoStatus&1));
