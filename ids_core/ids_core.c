@@ -185,17 +185,47 @@ PyObject *image_info(ids_core_Camera *self, int image_id) {
 
     PyObject *info = PyDict_New();
 
-    PyDict_SetItemString(info, "device_timestamp", Py_BuildValue("K", image_info.u64TimestampDevice));
-    PyDict_SetItemString(info, "timestamp", PyDateTime_FromDateAndTime(utc_timestamp.tm_year + 1900, utc_timestamp.tm_mon+1, utc_timestamp.tm_mday, utc_timestamp.tm_hour, utc_timestamp.tm_min, utc_timestamp.tm_sec, 1000*image_info.TimestampSystem.wMilliseconds));  /* Assume milliseconds the same */
-    PyDict_SetItemString(info, "digital_input", Py_BuildValue("I", image_info.dwIoStatus&4));
-    PyDict_SetItemString(info, "gpio1", Py_BuildValue("I", image_info.dwIoStatus&2));
-    PyDict_SetItemString(info, "gpio2", Py_BuildValue("I", image_info.dwIoStatus&1));
-    PyDict_SetItemString(info, "frame_number", Py_BuildValue("K", image_info.u64FrameNumber));
-    PyDict_SetItemString(info, "camera_buffers", Py_BuildValue("I", image_info.dwImageBuffers));
-    PyDict_SetItemString(info, "used_camera_buffers", Py_BuildValue("I", image_info.dwImageBuffersInUse));
-    PyDict_SetItemString(info, "height", Py_BuildValue("I", image_info.dwImageHeight));
-    PyDict_SetItemString(info, "width", Py_BuildValue("I", image_info.dwImageWidth));
+    PyObject *device_timestamp =
+        Py_BuildValue("K", image_info.u64TimestampDevice);
+    PyObject *timestamp = /* Assume milliseconds don't change across timezone */
+        PyDateTime_FromDateAndTime(utc_timestamp.tm_year + 1900,
+                                   utc_timestamp.tm_mon + 1,
+                                   utc_timestamp.tm_mday,
+                                   utc_timestamp.tm_hour,
+                                   utc_timestamp.tm_min,
+                                   utc_timestamp.tm_sec,
+                                   1000*image_info.TimestampSystem.wMilliseconds);
+    PyObject *digital_input = Py_BuildValue("I", image_info.dwIoStatus&4);
+    PyObject *gpio1 = Py_BuildValue("I", image_info.dwIoStatus&2);
+    PyObject *gpio2 = Py_BuildValue("I", image_info.dwIoStatus&1);
+    PyObject *frame_number = Py_BuildValue("K", image_info.u64FrameNumber);
+    PyObject *camera_buffers = Py_BuildValue("I", image_info.dwImageBuffers);
+    PyObject *used_camera_buffers =
+        Py_BuildValue("I", image_info.dwImageBuffersInUse);
+    PyObject *height = Py_BuildValue("I", image_info.dwImageHeight);
+    PyObject *width = Py_BuildValue("I", image_info.dwImageWidth);
+
+    PyDict_SetItemString(info, "device_timestamp", device_timestamp);
+    PyDict_SetItemString(info, "timestamp", timestamp);
+    PyDict_SetItemString(info, "digital_input", digital_input);
+    PyDict_SetItemString(info, "gpio1", gpio1);
+    PyDict_SetItemString(info, "gpio2", gpio2);
+    PyDict_SetItemString(info, "frame_number", frame_number);
+    PyDict_SetItemString(info, "camera_buffers", camera_buffers);
+    PyDict_SetItemString(info, "used_camera_buffers", used_camera_buffers);
+    PyDict_SetItemString(info, "height", height);
+    PyDict_SetItemString(info, "width", width);
+
+    Py_DECREF(device_timestamp);
+    Py_DECREF(timestamp);
+    Py_DECREF(digital_input);
+    Py_DECREF(gpio1);
+    Py_DECREF(gpio2);
+    Py_DECREF(frame_number);
+    Py_DECREF(camera_buffers);
+    Py_DECREF(used_camera_buffers);
+    Py_DECREF(height);
+    Py_DECREF(width);
 
     return info;
 }
-
