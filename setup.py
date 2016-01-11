@@ -28,9 +28,18 @@
 from distutils.core import setup, Extension
 
 ids_core = Extension("ids_core",
-                     extra_compile_args = ['-std=gnu99', '-g3'],
-                     library_dirs = ['/usr/local/lib/'],
-                     libraries = ['ueye_api', 'm', 'z'],
+                     extra_compile_args = [],
+                     define_macros = [
+                        ('_IDS_EXPORT', None),
+                        ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
+                     ],
+                     library_dirs = ['C:/Program Files/IDS/uEye/Develop/Lib'],
+                     include_dirs = [
+                        '.',
+                        'C:/Program Files/IDS/uEye/Develop/include',
+                        'C:/Anaconda3/Lib/site-packages/numpy/core/include'
+                     ],
+                     libraries = ['ueye_api', 'ueye_tools'],
                      sources = [
                             'ids_core/ids_core.c',
                             'ids_core/ids_core_methods.c',

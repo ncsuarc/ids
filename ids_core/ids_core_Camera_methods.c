@@ -45,6 +45,7 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem);
 
 static PyObject *ids_core_Camera_capture_status(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     int ret;
+    PyObject *dict;
     UEYE_CAPTURE_STATUS_INFO capture_status;
 
     ret = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_GET,
@@ -53,48 +54,50 @@ static PyObject *ids_core_Camera_capture_status(ids_core_Camera *self, PyObject 
         raise_general_error(self, ret);
     }
 
-    PyObject *dict = PyDict_New();
-    PyObject *total = Py_BuildValue("I", capture_status.dwCapStatusCnt_Total);
-    PyObject *no_destination_mem = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]);
-    PyObject *conversion_failed = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED]);
-    PyObject *image_locked = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED]);
-    PyObject *no_driver_mem = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS]);
-    PyObject *device_not_available = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY]);
-    PyObject *usb_transfer_failed = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED]);
-    PyObject *device_timeout = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT]);
-    PyObject *eth_buffer_overrun = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN]);
-    PyObject *eth_missed_images = Py_BuildValue("I",
-            capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
+    dict = PyDict_New();
+    {
+      PyObject *total = Py_BuildValue("I", capture_status.dwCapStatusCnt_Total);
+      PyObject *no_destination_mem = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_NO_DEST_MEM]);
+      PyObject *conversion_failed = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_CONVERSION_FAILED]);
+      PyObject *image_locked = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_API_IMAGE_LOCKED]);
+      PyObject *no_driver_mem = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_OUT_OF_BUFFERS]);
+      PyObject *device_not_available = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DRV_DEVICE_NOT_READY]);
+      PyObject *usb_transfer_failed = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_USB_TRANSFER_FAILED]);
+      PyObject *device_timeout = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_DEV_TIMEOUT]);
+      PyObject *eth_buffer_overrun = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_BUFFER_OVERRUN]);
+      PyObject *eth_missed_images = Py_BuildValue("I",
+              capture_status.adwCapStatusCnt_Detail[IS_CAP_STATUS_ETH_MISSED_IMAGES]);
 
-    PyDict_SetItemString(dict, "total", total);
-    PyDict_SetItemString(dict, "no_destination_mem", no_destination_mem);
-    PyDict_SetItemString(dict, "conversion_failed", conversion_failed);
-    PyDict_SetItemString(dict, "image_locked", image_locked);
-    PyDict_SetItemString(dict, "no_driver_mem", no_driver_mem);
-    PyDict_SetItemString(dict, "device_not_available", device_not_available);
-    PyDict_SetItemString(dict, "usb_transfer_failed", usb_transfer_failed);
-    PyDict_SetItemString(dict, "device_timeout", device_timeout);
-    PyDict_SetItemString(dict, "eth_buffer_overrun", eth_buffer_overrun);
-    PyDict_SetItemString(dict, "eth_missed_images", eth_missed_images);
+      PyDict_SetItemString(dict, "total", total);
+      PyDict_SetItemString(dict, "no_destination_mem", no_destination_mem);
+      PyDict_SetItemString(dict, "conversion_failed", conversion_failed);
+      PyDict_SetItemString(dict, "image_locked", image_locked);
+      PyDict_SetItemString(dict, "no_driver_mem", no_driver_mem);
+      PyDict_SetItemString(dict, "device_not_available", device_not_available);
+      PyDict_SetItemString(dict, "usb_transfer_failed", usb_transfer_failed);
+      PyDict_SetItemString(dict, "device_timeout", device_timeout);
+      PyDict_SetItemString(dict, "eth_buffer_overrun", eth_buffer_overrun);
+      PyDict_SetItemString(dict, "eth_missed_images", eth_missed_images);
 
-    Py_DECREF(total);
-    Py_DECREF(no_destination_mem);
-    Py_DECREF(conversion_failed);
-    Py_DECREF(image_locked);
-    Py_DECREF(no_driver_mem);
-    Py_DECREF(device_not_available);
-    Py_DECREF(usb_transfer_failed);
-    Py_DECREF(device_timeout);
-    Py_DECREF(eth_buffer_overrun);
-    Py_DECREF(eth_missed_images);
+      Py_DECREF(total);
+      Py_DECREF(no_destination_mem);
+      Py_DECREF(conversion_failed);
+      Py_DECREF(image_locked);
+      Py_DECREF(no_driver_mem);
+      Py_DECREF(device_not_available);
+      Py_DECREF(usb_transfer_failed);
+      Py_DECREF(device_timeout);
+      Py_DECREF(eth_buffer_overrun);
+      Py_DECREF(eth_missed_images);
+    }
 
     /* Reset errors */
     ret = is_CaptureStatus(self->handle, IS_CAPTURE_STATUS_INFO_CMD_RESET, NULL, 0);
@@ -205,6 +208,11 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     wchar_t fancy_filename[256];
     int filetype = IS_IMG_JPG;
     unsigned int quality = 100;
+    int ret;
+    char *mem;
+    INT image_id;
+    IMAGE_FILE_PARAMS ImageFileParams;
+    PyObject *info;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|iI", kwlist, &filename, &filetype, &quality)) {
         return NULL;
@@ -216,17 +224,12 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
         PyErr_SetString(PyExc_ValueError, "Invalid image filetype");
     }
 
-    int ret;
-    char *mem;
-    INT image_id;
-
     ret = get_next_image(self, &mem, &image_id);
     if (ret) {
         /* Exception set, return */
         return NULL;
     }
 
-    IMAGE_FILE_PARAMS ImageFileParams;
     ImageFileParams.pwchFileName = fancy_filename;
     ImageFileParams.nFileType = filetype;
     ImageFileParams.nQuality = quality;
@@ -241,7 +244,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
         return NULL;
     }
 
-    PyObject *info = image_info(self, image_id);
+    info = image_info(self, image_id);
     if (!info) {
         return NULL;
     }
@@ -263,6 +266,7 @@ static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyO
     int ret;
     char *mem;
     INT image_id;
+    PyObject *image, *info, *tuple;
 
     ret = get_next_image(self, &mem, &image_id);
     if (ret) {
@@ -270,12 +274,12 @@ static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyO
         return NULL;
     }
 
-    PyObject *image = create_matrix(self, mem);
+    image = create_matrix(self, mem);
     if (!image) {
         return NULL;
     }
 
-    PyObject *info = image_info(self, image_id);
+    info = image_info(self, image_id);
     if (!info) {
         Py_DECREF(image);
         return NULL;
@@ -292,7 +296,7 @@ static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyO
         return NULL;
     }
 
-    PyObject *tuple = Py_BuildValue("(OO)", image, info);
+    tuple = Py_BuildValue("(OO)", image, info);
 
     /* BuildValue INCREF's these objects, but we don't need them anymore */
     Py_DECREF(image);

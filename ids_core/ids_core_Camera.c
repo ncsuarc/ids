@@ -152,6 +152,7 @@ static int init_cam_info(ids_core_Camera *self) {
 
 static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
     static char *kwlist[] = {"handle", "color", NULL};
+    int ret;
     self->handle = 0;
     self->bitdepth = 0;
     self->color = IS_CM_RGB8_PACKED;
@@ -168,7 +169,7 @@ static int ids_core_Camera_init(ids_core_Camera *self, PyObject *args, PyObject 
         return -1;
     }
 
-    int ret = is_InitCamera(&self->handle, NULL);
+    ret = is_InitCamera(&self->handle, NULL);
     switch (ret) {
     case IS_SUCCESS:
         break;
