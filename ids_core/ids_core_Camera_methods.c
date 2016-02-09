@@ -311,7 +311,8 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
     PyArrayObject* matrix;
 
     switch (color) {
-    case IS_CM_SENSOR_RAW8: {
+    case IS_CM_SENSOR_RAW8:
+    case IS_CM_MONO8: {
         npy_intp dims[2];
         dims[0] = self->height;
         dims[1] = self->width;
@@ -321,7 +322,10 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
         break; 
     }
     case IS_CM_SENSOR_RAW12: /* You need to left shift the output by 4 bits */
-    case IS_CM_SENSOR_RAW16: {
+    case IS_CM_SENSOR_RAW16:
+    case IS_CM_MONO10:
+    case IS_CM_MONO12:
+    case IS_CM_MONO16: {
         npy_intp dims[2];
         dims[0] = self->height;
         dims[1] = self->width;
