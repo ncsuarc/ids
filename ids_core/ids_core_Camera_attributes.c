@@ -204,6 +204,43 @@ static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, voi
     return -1;
 }
 
+// =============================== CUSTOMIZED FUNCTION ====================================
+
+static PyObject *ids_core_Camera_getbinning(ids_core_Camera *self, void *closure) {
+    return PyLong_FromLong(is_SetBinning(self->handle, IS_GET_BINNING));
+}
+
+static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+
+    if (value == NULL) {
+        ret = is_SetBinning(self->handle, IS_BINNING_DISABLE);
+        switch (ret) {
+            case IS_SUCCESS:
+                return 0;
+                break;
+            case IS_INVALID_PARAMETER:
+                PyErr_SetString(PyExc_ValueError, "An error occurred when disabling binning.");
+        return -1;
+        }
+    }
+
+    ret = is_SetBinning(self->handle, PyLong_AsLong(value));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        case IS_INVALID_PARAMETER:
+            PyErr_SetString(PyExc_ValueError, "Invalid binning configuration.");
+        
+        default:
+            raise_general_error(self, ret);
+        }
+    return -1;
+}
+
+// ========================================================================================
+
 static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure) {
     UINT clock;
     int ret;
@@ -778,6 +815,8 @@ PyGetSetDef ids_core_Camera_getseters[] = {
         "capturing images, and to free and reallocate memory\n"
         "after changing, as the new color mode may have a different\n"
         "bit depth.", NULL},
+    {"binning", (getter) ids_core_Camera_getbinning, (setter) ids_core_Camera_setbinning, "Binning", 
+        "Binning mode on X and Y orientation. \n\n", NULL},
     {"gain", (getter) ids_core_Camera_getgain, (setter) ids_core_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_core_Camera_getexposure, (setter) ids_core_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_core_Camera_getauto_exposure, (setter) ids_core_Camera_setauto_exposure, "Auto exposure", NULL},
