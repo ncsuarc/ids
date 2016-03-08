@@ -235,8 +235,34 @@ static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, vo
         
         default:
             raise_general_error(self, ret);
-        }
+    }
     return -1;
+}
+
+static PyObject *ids_core_Camera_getaoi(ids_core_Camera *self, void *closure) {
+    IS_RECT r;
+    is_AOI(self->handle, IS_AOI_IMAGE_GET_AOI, &r, sizeof(r));
+    return PyTuple_Pack(4, r.s32X, r.s32Y, r.s32Width, r.s32Height);
+}
+
+static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *x, PyObject *y,
+                                                         PyObject *nx, PyObject *ny) {
+    int ret;
+    IS_RECT r = {
+        .s32X      = PyLong_AsLong(x),
+        .s32Y      = PyLong_AsLong(y),
+        .s32Width  = PyLong_AsLong(nx),
+        .s32Height = PyLong_AsLong(ny)
+    };
+
+    ret = is_AOI(self->handle, IS_AOI_IMAGE_SET_AOI, &r, sizeof(r));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting AOI status.");
+    }
 }
 
 // ========================================================================================
@@ -808,6 +834,7 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"name", (getter) ids_core_Camera_getname, (setter) ids_core_Camera_setname, "Camera manufacturer and name", NULL},
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
+    {"aoi", (getter) ids_core_Camera_getaoi, (setter) ids_core_Camera_setaoi, "AOI", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
     {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode,
         "Color mode of images.\n\n"
