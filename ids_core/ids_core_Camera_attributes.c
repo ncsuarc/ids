@@ -204,8 +204,6 @@ static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, voi
     return -1;
 }
 
-// =============================== CUSTOMIZED FUNCTION ====================================
-
 static PyObject *ids_core_Camera_getbinning(ids_core_Camera *self, void *closure) {
     return PyLong_FromLong(is_SetBinning(self->handle, IS_GET_BINNING));
 }
@@ -240,19 +238,23 @@ static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, vo
 }
 
 static PyObject *ids_core_Camera_getaoi(ids_core_Camera *self, void *closure) {
+    PyObject *ret_tuple = PyTuple_New(4);
     IS_RECT r;
     is_AOI(self->handle, IS_AOI_IMAGE_GET_AOI, &r, sizeof(r));
-    return PyTuple_Pack(4, r.s32X, r.s32Y, r.s32Width, r.s32Height);
+    PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong(r.s32X));
+    PyTuple_SetItem(ret_tuple, 1, PyLong_FromLong(r.s32Y));
+    PyTuple_SetItem(ret_tuple, 2, PyLong_FromLong(r.s32Width));
+    PyTuple_SetItem(ret_tuple, 3, PyLong_FromLong(r.s32Height));
+    return ret_tuple;
 }
 
-static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *x, PyObject *y,
-                                                         PyObject *nx, PyObject *ny) {
+static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *set_tuple) {
     int ret;
     IS_RECT r = {
-        .s32X      = PyLong_AsLong(x),
-        .s32Y      = PyLong_AsLong(y),
-        .s32Width  = PyLong_AsLong(nx),
-        .s32Height = PyLong_AsLong(ny)
+        .s32X      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 0)),
+        .s32Y      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 1)),
+        .s32Width  = PyLong_AsLong(PyTuple_GetItem(set_tuple, 2)),
+        .s32Height = PyLong_AsLong(PyTuple_GetItem(set_tuple, 3))
     };
 
     ret = is_AOI(self->handle, IS_AOI_IMAGE_SET_AOI, &r, sizeof(r));
@@ -264,8 +266,6 @@ static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *x, PyObject *
             PyErr_SetString(PyExc_ValueError, "An error occurred when setting AOI status.");
     }
 }
-
-// ========================================================================================
 
 static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure) {
     UINT clock;
