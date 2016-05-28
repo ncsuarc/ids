@@ -51,7 +51,7 @@ You can get images from the camera as a Numpy array
 
 PIL provides a wide range of formats to save in.
 
-    >>> Import Image
+    >>> from PIL import Image
     >>> pil_img = Image.fromarray(img)
     >>> pil_img.save("pil.jpg", quality=95)
 
