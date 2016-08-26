@@ -316,6 +316,15 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
         memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
         break; 
     }
+    case IS_CM_MONO8: {
+        npy_intp dims[2];
+        dims[0] = self->height;
+        dims[1] = self->width;
+
+        matrix = (PyArrayObject*)PyArray_SimpleNew(2, dims, NPY_UINT8);
+        memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
+        break; 
+    }
     case IS_CM_SENSOR_RAW12: /* You need to left shift the output by 4 bits */
     case IS_CM_SENSOR_RAW16: {
         npy_intp dims[2];
