@@ -237,6 +237,32 @@ static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, vo
     return -1;
 }
 
+static PyObject *ids_core_Camera_getflashparams(ids_core_Camera *self, void *closure) {
+    PyObject *ret_tuple = PyTuple_New(2);
+    IO_FLASH_PARAMS f;
+    is_IO(self->handle, IS_IO_CMD_FLASH_GET_PARAMS, (void*)&f, sizeof(f));
+    PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong((long) f.s32Delay));
+    PyTuple_SetItem(ret_tuple, 1, PyLong_FromUnsignedLong((unsigned long) f.u32Duration));
+    return ret_tuple;
+}
+
+static int ids_core_Camera_setflashparams(ids_core_Camera *self, PyObject *set_tuple) {
+    int ret;
+    IO_FLASH_PARAMS f = {
+        .s32Delay    = (INT) PyLong_AsLong(PyTuple_GetItem(set_tuple, 0)),
+        .u32Duration = (UINT) PyLong_AsUnsignedLong(PyTuple_GetItem(set_tuple, 1))
+    };
+
+    ret = is_IO(self->handle, IS_IO_CMD_FLASH_SET_PARAMS, (void*)&f, sizeof(f));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting flash parameters.");
+            return -1;
+    }
+}
+
 static PyObject *ids_core_Camera_getaoi(ids_core_Camera *self, void *closure) {
     PyObject *ret_tuple = PyTuple_New(4);
     IS_RECT r;
@@ -896,6 +922,7 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
     {"aoi", (getter) ids_core_Camera_getaoi, (setter) ids_core_Camera_setaoi, "AOI", NULL},
+    {"flash", (getter) ids_core_Camera_getflashparams, (setter) ids_core_Camera_setflashparams, "Flash timing parameters", NULL},
     {"clockrange", (getter) ids_core_Camera_getclockrange, (setter) ids_core_Camera_setclockrange, "Pixel Clock Range of camera", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
     {"fps", (getter) ids_core_Camera_getfps, (setter) ids_core_Camera_setfps, "Frame per Second", NULL},
