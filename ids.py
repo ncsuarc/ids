@@ -1,6 +1,6 @@
 # Copyright (c) 2012, 2013, North Carolina State University Aerial Robotics Club
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #     * Redistributions of source code must retain the above copyright
@@ -11,7 +11,7 @@
 #     * Neither the name of the North Carolina State University Aerial Robotics Club
 #       nor the names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -160,6 +160,26 @@ class Camera(ids_core.Camera):
             raise IOError("Color cannot be changed while capturing images")
 
         ids_core.Camera.color_mode.__set__(self, val)
+
+        # Free all memory and reallocate, as bitdepth may have changed
+        self.free_all()
+        self._allocate_memory()
+
+    # Override aoi to reallocate memory when changed
+    @property
+    def aoi(self):
+        """
+        AOI settings used for capturing images.
+        Reset memory as color_mode does.
+        """
+        return ids_core.Camera.aoi.__get__(self)
+
+    @aoi.setter
+    def aoi(self, val):
+        if self.continuous_capture:
+            raise IOError("IO Error")
+
+        ids_core.Camera.aoi.__set__(self, val)
 
         # Free all memory and reallocate, as bitdepth may have changed
         self.free_all()

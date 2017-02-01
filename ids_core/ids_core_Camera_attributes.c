@@ -204,6 +204,120 @@ static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, voi
     return -1;
 }
 
+static PyObject *ids_core_Camera_getbinning(ids_core_Camera *self, void *closure) {
+    return PyLong_FromLong(is_SetBinning(self->handle, IS_GET_BINNING));
+}
+
+static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+
+    if (value == NULL) {
+        ret = is_SetBinning(self->handle, IS_BINNING_DISABLE);
+        switch (ret) {
+            case IS_SUCCESS:
+                return 0;
+                break;
+            case IS_INVALID_PARAMETER:
+                PyErr_SetString(PyExc_ValueError, "An error occurred when disabling binning.");
+        return -1;
+        }
+    }
+
+    ret = is_SetBinning(self->handle, PyLong_AsLong(value));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        case IS_INVALID_PARAMETER:
+            PyErr_SetString(PyExc_ValueError, "Invalid binning configuration.");
+        
+        default:
+            raise_general_error(self, ret);
+    }
+    return -1;
+}
+
+static PyObject *ids_core_Camera_getflashparams(ids_core_Camera *self, void *closure) {
+    PyObject *ret_tuple = PyTuple_New(2);
+    IO_FLASH_PARAMS f;
+    is_IO(self->handle, IS_IO_CMD_FLASH_GET_PARAMS, (void*)&f, sizeof(f));
+    PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong((long) f.s32Delay));
+    PyTuple_SetItem(ret_tuple, 1, PyLong_FromUnsignedLong((unsigned long) f.u32Duration));
+    return ret_tuple;
+}
+
+static int ids_core_Camera_setflashparams(ids_core_Camera *self, PyObject *set_tuple) {
+    int ret;
+    IO_FLASH_PARAMS f = {
+        .s32Delay    = (INT) PyLong_AsLong(PyTuple_GetItem(set_tuple, 0)),
+        .u32Duration = (UINT) PyLong_AsUnsignedLong(PyTuple_GetItem(set_tuple, 1))
+    };
+
+    ret = is_IO(self->handle, IS_IO_CMD_FLASH_SET_PARAMS, (void*)&f, sizeof(f));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting flash parameters.");
+            return -1;
+    }
+}
+
+static PyObject *ids_core_Camera_getaoi(ids_core_Camera *self, void *closure) {
+    PyObject *ret_tuple = PyTuple_New(4);
+    IS_RECT r;
+    is_AOI(self->handle, IS_AOI_IMAGE_GET_AOI, &r, sizeof(r));
+    PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong(r.s32X));
+    PyTuple_SetItem(ret_tuple, 1, PyLong_FromLong(r.s32Y));
+    PyTuple_SetItem(ret_tuple, 2, PyLong_FromLong(r.s32Width));
+    PyTuple_SetItem(ret_tuple, 3, PyLong_FromLong(r.s32Height));
+    return ret_tuple;
+}
+
+static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *set_tuple) {
+    int ret;
+    IS_RECT r = {
+        .s32X      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 0)),
+        .s32Y      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 1)),
+        .s32Width  = PyLong_AsLong(PyTuple_GetItem(set_tuple, 2)),
+        .s32Height = PyLong_AsLong(PyTuple_GetItem(set_tuple, 3))
+    };
+
+    ret = is_AOI(self->handle, IS_AOI_IMAGE_SET_AOI, &r, sizeof(r));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting AOI status.");
+            return -1;
+    }
+}
+
+static PyObject *ids_core_Camera_getclockrange(ids_core_Camera *self, void *closure) {
+    int ret;
+    UINT r[3];
+    PyObject *ret_tuple = PyTuple_New(3);
+    ZeroMemory(r, sizeof(r));
+
+    ret = is_PixelClock(self->handle, IS_PIXELCLOCK_CMD_GET_RANGE, &r, sizeof(r));
+    switch (ret) {
+        case IS_SUCCESS:
+            PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong(r[0]));
+            PyTuple_SetItem(ret_tuple, 1, PyLong_FromLong(r[1]));
+            PyTuple_SetItem(ret_tuple, 2, PyLong_FromLong(r[2]));
+            return ret_tuple;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when getting clock range.");
+            return PyLong_FromLong(-1);
+    }
+}
+
+static int ids_core_Camera_setclockrange(ids_core_Camera *self, PyObject *value, void *closure) {
+    PyErr_SetString(PyExc_TypeError, "Cannot modify attribute 'clockrange'");
+    return -1;
+}
+
 static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure) {
     UINT clock;
     int ret;
@@ -252,8 +366,44 @@ static int ids_core_Camera_setpixelclock(ids_core_Camera *self, PyObject *value,
     default:
         raise_general_error(self, ret);
     }
-
     return -1;
+}
+
+static PyObject *ids_core_Camera_getfps(ids_core_Camera *self, void *closure) {
+    int ret;
+    double dblfps;
+
+    ret = is_GetFramesPerSecond(self->handle, &dblfps);
+    switch (ret) {
+        case IS_SUCCESS:
+            return PyFloat_FromDouble(dblfps);
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when getting fps.");
+            return PyLong_FromLong(-1);
+    }
+}
+
+static int ids_core_Camera_setfps(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+    double realfps;
+
+    ret = is_SetFrameRate(self->handle, PyFloat_AsDouble(value), &realfps);
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+        case IS_INVALID_CAMERA_HANDLE:
+            PyErr_SetString(PyExc_ValueError, "Invalid camera handle");
+            return -1;
+        case IS_INVALID_MODE:
+            PyErr_SetString(PyExc_ValueError, "Camera is in standby mode, function not allowed.");
+            return -1;
+        case IS_INVALID_PARAMETER:
+            PyErr_SetString(PyExc_ValueError, "One of the submitted parameters is outside the valid range or is not supported for this sensor or is not available in this mode.");
+            return -1;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting fps.");
+            return -1;
+    }
 }
 
 static PyObject *ids_core_Camera_getcolor_mode(ids_core_Camera *self, void *closure) {
@@ -771,13 +921,19 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"name", (getter) ids_core_Camera_getname, (setter) ids_core_Camera_setname, "Camera manufacturer and name", NULL},
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
+    {"aoi", (getter) ids_core_Camera_getaoi, (setter) ids_core_Camera_setaoi, "AOI", NULL},
+    {"flash", (getter) ids_core_Camera_getflashparams, (setter) ids_core_Camera_setflashparams, "Flash timing parameters", NULL},
+    {"clockrange", (getter) ids_core_Camera_getclockrange, (setter) ids_core_Camera_setclockrange, "Pixel Clock Range of camera", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
+    {"fps", (getter) ids_core_Camera_getfps, (setter) ids_core_Camera_setfps, "Frame per Second", NULL},
     {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode,
         "Color mode of images.\n\n"
         "It is recommended to change color mode only when not\n"
         "capturing images, and to free and reallocate memory\n"
         "after changing, as the new color mode may have a different\n"
         "bit depth.", NULL},
+    {"binning", (getter) ids_core_Camera_getbinning, (setter) ids_core_Camera_setbinning, "Binning", 
+        "Binning mode on X and Y orientation.", NULL},
     {"gain", (getter) ids_core_Camera_getgain, (setter) ids_core_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_core_Camera_getexposure, (setter) ids_core_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_core_Camera_getauto_exposure, (setter) ids_core_Camera_setauto_exposure, "Auto exposure", NULL},

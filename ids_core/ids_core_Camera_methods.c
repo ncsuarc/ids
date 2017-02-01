@@ -316,6 +316,15 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
         memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
         break; 
     }
+    case IS_CM_MONO8: {
+        npy_intp dims[2];
+        dims[0] = self->height;
+        dims[1] = self->width;
+
+        matrix = (PyArrayObject*)PyArray_SimpleNew(2, dims, NPY_UINT8);
+        memcpy(PyArray_DATA(matrix), mem, self->bitdepth/8 * dims[0] * dims[1]);
+        break; 
+    }
     case IS_CM_SENSOR_RAW12: /* You need to left shift the output by 4 bits */
     case IS_CM_SENSOR_RAW16: {
         npy_intp dims[2];
@@ -349,6 +358,32 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
     return (PyObject*)matrix;
 }
 
+static PyObject *ids_core_Camera_setflashglobal(ids_core_Camera *self) {
+    INT mode = IO_FLASH_MODE_FREERUN_LO_ACTIVE;
+
+    int ret = is_IO(self->handle, IS_IO_CMD_FLASH_SET_MODE, (void*)&mode, sizeof(mode));
+    
+    switch (ret){
+        case IS_SUCCESS:
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown error occurred in iDS SDK when setting active mode.");
+            return NULL;
+    }
+
+    ret = is_IO(self->handle, IS_IO_CMD_FLASH_APPLY_GLOBAL_PARAMS, NULL, 0);
+
+    switch (ret){
+        case IS_SUCCESS:
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown error occurred in iDS SDK when setting delay.");
+            return NULL;
+    }
+
+    return Py_BuildValue("");
+}
+
 PyMethodDef ids_core_Camera_methods[] = {
     {"capture_status", (PyCFunction) ids_core_Camera_capture_status, METH_NOARGS,
         "capture_status() -> status\n\n"
@@ -359,7 +394,7 @@ PyMethodDef ids_core_Camera_methods[] = {
         "Returns:\n"
         "    Dictionary of internal camera and driver errors.\n\n"
         "Raises:\n"
-        "    IDSError: An unknown error occured in the uEye SDK."
+        "    IDSError: An unknown error occurred in the uEye SDK."
     },
     {"alloc", (PyCFunction) ids_core_Camera_alloc, METH_NOARGS,
         "alloc()\n\n"
@@ -376,7 +411,7 @@ PyMethodDef ids_core_Camera_methods[] = {
         "close()\n\n"
         "Closes open camera.\n\n"
         "Raises:\n"
-        "    IDSError: An unknown error occured in the uEye SDK."
+        "    IDSError: An unknown error occurred in the uEye SDK."
     },
     {"next_save", (PyCFunction) ids_core_Camera_next_save, METH_VARARGS | METH_KEYWORDS,
         "next_save(filename [, filetype=ids_core.FILETYPE_JPG, quality=100]) -> metadata\n\n"
@@ -392,7 +427,7 @@ PyMethodDef ids_core_Camera_methods[] = {
         "Raises:\n"
         "    ValueError: Invalid filetype.\n"
         "    IDSTimeoutError: An image was not available within the timeout.\n"
-        "    IDSError: An unknown error occured in the uEye SDK."
+        "    IDSError: An unknown error occurred in the uEye SDK."
     },
     {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS,
         "next() -> image, metadata\n\n"
@@ -405,9 +440,15 @@ PyMethodDef ids_core_Camera_methods[] = {
         "    Timestamp is provided as a UTC datetime object\n\n"
         "Raises:\n"
         "    IDSTimeoutError: An image was not available within the timeout.\n"
-        "    IDSError: An unknown error occured in the uEye SDK."
+        "    IDSError: An unknown error occurred in the uEye SDK."
         "    NotImplementedError: The current color format cannot be converted\n"
         "        to a numpy array."
+    },
+    {"set_flash_global", (PyCFunction) ids_core_Camera_setflashglobal, METH_NOARGS,
+        "set_flash_global()\n\n"
+        "Set flash duration and delay by grabbing global parameters\n\n"
+        "Raises:\n"
+        "    RuntimeError: An unknown error occurred in the uEye SDK."
     },
     {NULL}
 };
