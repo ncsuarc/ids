@@ -204,6 +204,69 @@ static int ids_core_Camera_setheight(ids_core_Camera *self, PyObject *value, voi
     return -1;
 }
 
+static PyObject *ids_core_Camera_getbinning(ids_core_Camera *self, void *closure) {
+    return PyLong_FromLong(is_SetBinning(self->handle, IS_GET_BINNING));
+}
+
+static int ids_core_Camera_setbinning(ids_core_Camera *self, PyObject *value, void *closure) {
+    int ret;
+
+    if (value == NULL) {
+        ret = is_SetBinning(self->handle, IS_BINNING_DISABLE);
+        switch (ret) {
+            case IS_SUCCESS:
+                return 0;
+                break;
+            case IS_INVALID_PARAMETER:
+                PyErr_SetString(PyExc_ValueError, "An error occurred when disabling binning.");
+        return -1;
+        }
+    }
+
+    ret = is_SetBinning(self->handle, PyLong_AsLong(value));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        case IS_INVALID_PARAMETER:
+            PyErr_SetString(PyExc_ValueError, "Invalid binning configuration.");
+        
+        default:
+            raise_general_error(self, ret);
+    }
+    return -1;
+}
+
+static PyObject *ids_core_Camera_getaoi(ids_core_Camera *self, void *closure) {
+    PyObject *ret_tuple = PyTuple_New(4);
+    IS_RECT r;
+    is_AOI(self->handle, IS_AOI_IMAGE_GET_AOI, &r, sizeof(r));
+    PyTuple_SetItem(ret_tuple, 0, PyLong_FromLong(r.s32X));
+    PyTuple_SetItem(ret_tuple, 1, PyLong_FromLong(r.s32Y));
+    PyTuple_SetItem(ret_tuple, 2, PyLong_FromLong(r.s32Width));
+    PyTuple_SetItem(ret_tuple, 3, PyLong_FromLong(r.s32Height));
+    return ret_tuple;
+}
+
+static int ids_core_Camera_setaoi(ids_core_Camera *self, PyObject *set_tuple) {
+    int ret;
+    IS_RECT r = {
+        .s32X      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 0)),
+        .s32Y      = PyLong_AsLong(PyTuple_GetItem(set_tuple, 1)),
+        .s32Width  = PyLong_AsLong(PyTuple_GetItem(set_tuple, 2)),
+        .s32Height = PyLong_AsLong(PyTuple_GetItem(set_tuple, 3))
+    };
+
+    ret = is_AOI(self->handle, IS_AOI_IMAGE_SET_AOI, &r, sizeof(r));
+    switch (ret) {
+        case IS_SUCCESS:
+            return 0;
+            break;
+        default:
+            PyErr_SetString(PyExc_ValueError, "An error occurred when setting AOI status.");
+    }
+}
+
 static PyObject *ids_core_Camera_getpixelclock(ids_core_Camera *self, void *closure) {
     UINT clock;
     int ret;
@@ -771,6 +834,7 @@ PyGetSetDef ids_core_Camera_getseters[] = {
     {"name", (getter) ids_core_Camera_getname, (setter) ids_core_Camera_setname, "Camera manufacturer and name", NULL},
     {"width", (getter) ids_core_Camera_getwidth, (setter) ids_core_Camera_setwidth, "Image width", NULL},
     {"height", (getter) ids_core_Camera_getheight, (setter) ids_core_Camera_setheight, "Image height", NULL},
+    {"aoi", (getter) ids_core_Camera_getaoi, (setter) ids_core_Camera_setaoi, "AOI", NULL},
     {"pixelclock", (getter) ids_core_Camera_getpixelclock, (setter) ids_core_Camera_setpixelclock, "Pixel Clock of camera", NULL},
     {"color_mode", (getter) ids_core_Camera_getcolor_mode, (setter) ids_core_Camera_setcolor_mode,
         "Color mode of images.\n\n"
@@ -778,6 +842,8 @@ PyGetSetDef ids_core_Camera_getseters[] = {
         "capturing images, and to free and reallocate memory\n"
         "after changing, as the new color mode may have a different\n"
         "bit depth.", NULL},
+    {"binning", (getter) ids_core_Camera_getbinning, (setter) ids_core_Camera_setbinning, "Binning", 
+        "Binning mode on X and Y orientation. \n\n", NULL},
     {"gain", (getter) ids_core_Camera_getgain, (setter) ids_core_Camera_setgain, "Hardware gain (individual RGB gains not yet supported)", NULL},
     {"exposure", (getter) ids_core_Camera_getexposure, (setter) ids_core_Camera_setexposure, "Exposure time", NULL},
     {"auto_exposure", (getter) ids_core_Camera_getauto_exposure, (setter) ids_core_Camera_setauto_exposure, "Auto exposure", NULL},
