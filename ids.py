@@ -164,3 +164,60 @@ class Camera(ids_core.Camera):
         # Free all memory and reallocate, as bitdepth may have changed
         self.free_all()
         self._allocate_memory()
+
+    def singlecapture(self, *args, **kwargs):
+        """
+        Make one image from the camera.
+
+        Waits for an image to be available from the camera, and returns
+        it as a numpy array.  Blocks until image is available, or timeout is
+        reached.
+
+        Returns:
+            (image, metadata) tuple, where image is a numpy array containing
+            the image in the camera color format, and metadata is a dictionary
+            with image metadata.  Timestamp is provided as a datetime object in
+            UTC.
+
+        Raises:
+            IDSTimeoutError: An image was not available within the timeout.
+            IDSError: An unknown error occured in the uEye SDK.
+            NotImplementedError: The current color format cannot be converted
+                to a numpy array.
+        """
+        while True:
+            try:
+                return super(Camera, self).singlecapture(*args, **kwargs)
+            except ids_core.IDSCaptureStatus:
+                self._check_capture_status()
+
+    def singlecapture_save(self, *args, **kwargs):
+        """
+        Save one image to a file.
+
+        This function behaves similarly to Camera.singlecaptures(), however instead
+        of returning the image, it uses the IDS functions to save the image
+        to a file.  The appropriate color mode for the filetype should be
+        used (eg. BGR for JPEG).
+
+        Arguments:
+            filename: File to save image to.
+            filetype (optional): Filetype to save as, defaults to
+                ids_core.FILETYPE_JPG.
+            quality (optional): Image quality for JPEG and PNG,
+                with 100 as maximum quality.
+
+        Returns:
+            Dictonary containing image metadata.  Timestamp is provided as
+            a datetime object in UTC.
+
+        Raises:
+            ValueError: An invalid filetype was passed in.
+            IDSTimeoutError: An image was not available within the timeout.
+            IDSError: An unknown error occured in the uEye SDK.
+        """
+        while True:
+            try:
+                return super(Camera, self).singlecapture_save(*args, **kwargs)
+            except ids_core.IDSCaptureStatus:
+                self._check_capture_status()
