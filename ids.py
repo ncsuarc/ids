@@ -83,7 +83,7 @@ class Camera(ids_core.Camera):
             if value and messages[key]:
                 self.logger.warning("%s (%d instances)" % (messages[key], value))
 
-    def next(self):
+    def next(self, *args, **kwargs):
         """
         Get the next available image from the camera.
 
@@ -105,7 +105,7 @@ class Camera(ids_core.Camera):
         """
         while True:
             try:
-                return super(Camera, self).next()
+                return super(Camera, self).next(*args, **kwargs)
             except ids_core.IDSCaptureStatus:
                 self._check_capture_status()
 
