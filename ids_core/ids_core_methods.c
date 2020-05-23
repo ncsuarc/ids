@@ -44,9 +44,10 @@ static PyObject *ids_core_number_cameras(PyObject *self, PyObject *args) {
 }
 
 static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
-    int num_cams, ret;
+    int num_cams, ret, i;
     UEYE_CAMERA_LIST *cameras;
     PyObject *list = PyList_New(0);
+    void* cam_data = NULL;
 
     ret = is_GetNumberOfCameras(&num_cams);
     if (ret != IS_SUCCESS) {
@@ -66,18 +67,23 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
      * appropriate number of cameras.  Thus, we build a structure of the
      * appropriate size on the stack, and then cast it to UEYE_CAMERA_LIST
      */
-    uint8_t cam_data[sizeof(cameras->dwCount) + num_cams * sizeof(cameras->uci)];
-    cameras = (UEYE_CAMERA_LIST *) &cam_data;
+    cam_data = malloc(sizeof(ULONG) + num_cams * sizeof(UEYE_CAMERA_INFO));
+    if (!cam_data) {
+        Py_DECREF(list);
+        PyErr_Format(IDSError, "malloc() failed");
+        return NULL;
+    }
+    cameras = (UEYE_CAMERA_LIST *) cam_data;
     cameras->dwCount = num_cams;
 
     ret = is_GetCameraList(cameras);
     if (ret != IS_SUCCESS) {
-        Py_DECREF(list);
-        PyErr_Format(IDSError, "uEye SDK error %d", ret);
+        free(cam_data);
         return NULL;
     }
+    
 
-    for (int i = 0; i < cameras->dwCount; i++) {
+    for (i = 0; i < cameras->dwCount; i++) {
         PyObject *camera_info = PyDict_New();
 
         PyObject *camera_id = Py_BuildValue("I", cameras->uci[i].dwCameraID);
@@ -109,6 +115,7 @@ static PyObject *ids_core_camera_list(PyObject *self, PyObject *args) {
         Py_DECREF(camera_info);
     }
 
+    free(cam_data);
     return list;
 }
 

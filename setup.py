@@ -26,20 +26,40 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from distutils.core import setup, Extension
+import sys
 
-ids_core = Extension("ids_core",
-                     extra_compile_args = ['-std=gnu99', '-g3'],
-                     library_dirs = ['/usr/local/lib/'],
-                     libraries = ['ueye_api', 'm', 'z'],
-                     sources = [
-                            'ids_core/ids_core.c',
-                            'ids_core/ids_core_methods.c',
-                            'ids_core/ids_core_constants.c',
-                            'ids_core/ids_core_Camera.c',
-                            'ids_core/ids_core_Camera_methods.c',
-                            'ids_core/ids_core_Camera_attributes.c',
-                            'ids_core/ids_core_color.c',
-                     ])
+if sys.platform == "win32":
+  args = {
+    'extra_compile_args': [],
+    'define_macros': [
+      ('_IDS_EXPORT', None),
+      ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')
+    ],
+    'library_dirs': ['C:/Program Files/IDS/uEye/Develop/Lib'],
+    'libraries': ['ueye_api', 'ueye_tools'],
+    'include_dirs': [
+      '.',
+      'C:/Program Files/IDS/uEye/Develop/include',
+      'C:/Anaconda3/Lib/site-packages/numpy/core/include'
+    ]
+  }
+else:
+  args = {
+    'extra_compile_args': ['-std=gnu99', '-g3'],
+    'library_dirs': ['/usr/local/lib/'],
+    'libraries': ['ueye_api', 'm', 'z']
+  }
+# Platform-independent args.
+args['sources'] = [
+  'ids_core/ids_core.c',
+  'ids_core/ids_core_methods.c',
+  'ids_core/ids_core_constants.c',
+  'ids_core/ids_core_Camera.c',
+  'ids_core/ids_core_Camera_methods.c',
+  'ids_core/ids_core_Camera_attributes.c',
+  'ids_core/ids_core_color.c',
+]
+ids_core = Extension("ids_core", **args)
 
 setup(name = 'ids',
       version = '1.0',

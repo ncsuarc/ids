@@ -171,6 +171,10 @@ static void timestamp_to_utc(UEYETIME *timestamp, struct tm *dest) {
 PyObject *image_info(ids_core_Camera *self, int image_id) {
     UEYEIMAGEINFO image_info;
     struct tm utc_timestamp;
+    PyObject *info, *device_timestamp, *timestamp, *digital_input;
+    PyObject *gpio1, *gpio2;
+    PyObject *frame_number, *camera_buffers, *used_camera_buffers;
+    PyObject *height, *width;
 
     int ret = is_GetImageInfo(self->handle, image_id, &image_info, sizeof(image_info));
     switch (ret) {
@@ -183,11 +187,11 @@ PyObject *image_info(ids_core_Camera *self, int image_id) {
 
     timestamp_to_utc(&image_info.TimestampSystem, &utc_timestamp);
 
-    PyObject *info = PyDict_New();
+    info = PyDict_New();
 
-    PyObject *device_timestamp =
+    device_timestamp =
         Py_BuildValue("K", image_info.u64TimestampDevice);
-    PyObject *timestamp = /* Assume milliseconds don't change across timezone */
+    timestamp = /* Assume milliseconds don't change across timezone */
         PyDateTime_FromDateAndTime(utc_timestamp.tm_year + 1900,
                                    utc_timestamp.tm_mon + 1,
                                    utc_timestamp.tm_mday,
@@ -195,15 +199,15 @@ PyObject *image_info(ids_core_Camera *self, int image_id) {
                                    utc_timestamp.tm_min,
                                    utc_timestamp.tm_sec,
                                    1000*image_info.TimestampSystem.wMilliseconds);
-    PyObject *digital_input = Py_BuildValue("I", image_info.dwIoStatus&4);
-    PyObject *gpio1 = Py_BuildValue("I", image_info.dwIoStatus&2);
-    PyObject *gpio2 = Py_BuildValue("I", image_info.dwIoStatus&1);
-    PyObject *frame_number = Py_BuildValue("K", image_info.u64FrameNumber);
-    PyObject *camera_buffers = Py_BuildValue("I", image_info.dwImageBuffers);
-    PyObject *used_camera_buffers =
+    digital_input = Py_BuildValue("I", image_info.dwIoStatus&4);
+    gpio1 = Py_BuildValue("I", image_info.dwIoStatus&2);
+    gpio2 = Py_BuildValue("I", image_info.dwIoStatus&1);
+    frame_number = Py_BuildValue("K", image_info.u64FrameNumber);
+    camera_buffers = Py_BuildValue("I", image_info.dwImageBuffers);
+    used_camera_buffers =
         Py_BuildValue("I", image_info.dwImageBuffersInUse);
-    PyObject *height = Py_BuildValue("I", image_info.dwImageHeight);
-    PyObject *width = Py_BuildValue("I", image_info.dwImageWidth);
+    height = Py_BuildValue("I", image_info.dwImageHeight);
+    width = Py_BuildValue("I", image_info.dwImageWidth);
 
     PyDict_SetItemString(info, "device_timestamp", device_timestamp);
     PyDict_SetItemString(info, "timestamp", timestamp);
