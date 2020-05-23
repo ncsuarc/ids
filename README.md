@@ -1,5 +1,13 @@
-IDS Python Module
-==================
+# MAINTAINERS WANTED
+
+**This project has been unmaintained since mid 2016. Since the club no longer
+uses IDS cameras and no current member was present when this library was in
+use, we are unlikely to merge any pull requests or comment on any issues.**
+
+***If you are interested in maintaining the project, please comment on the
+pinned issue or email aerialrobotics@ncsu.edu.***
+
+# IDS Python Module
 
 A module for interfacing with IDS Imaging machine vision cameras.
 This module wraps the IDS uEye SDK, providing a convient Python interface
