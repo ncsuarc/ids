@@ -1,11 +1,4 @@
-# MAINTAINERS WANTED
-
-**This project has been unmaintained since mid 2016. Since the club no longer
-uses IDS cameras and no current member was present when this library was in
-use, we are unlikely to merge any pull requests or comment on any issues.**
-
-***If you are interested in maintaining the project, please comment on the
-pinned issue or email aerialrobotics@ncsu.edu.***
+__This project is unmaintained, please see [pyueye](https://pypi.org/project/pyueye/) for the official ids library.__
 
 # IDS Python Module
 
