@@ -38,7 +38,7 @@
 
 #include "ids_core.h"
 
-#define IMG_TIMEOUT 3000
+#define IMG_TIMEOUT 500
 #define NUM_TRIES 5
 
 static PyObject *create_matrix(ids_core_Camera *self, char *mem);
@@ -177,16 +177,21 @@ static PyObject *ids_core_Camera_close(ids_core_Camera *self, PyObject *args, Py
 /* Gets next image with is_WaitForNextImage().
  * Returns zero on success, non-zero on failure,
  * with exception set. */
-static int get_next_image(ids_core_Camera *self, char **mem, INT *image_id) {
+static int get_next_image(ids_core_Camera *self, char **mem, INT *image_id, int timeout) {
     int ret;
 
-    ret = is_WaitForNextImage(self->handle, IMG_TIMEOUT, mem, image_id); 
+	ret = is_CaptureVideo(self->handle, IS_GET_LIVE);
+
+	if (ret == FALSE)
+    	is_FreezeVideo(self->handle, IS_DONT_WAIT);
+
+    ret = is_WaitForNextImage(self->handle, timeout, mem, image_id);
 
     switch (ret) {
     case IS_SUCCESS:
         break;
     case IS_TIMED_OUT:
-        PyErr_Format(IDSTimeoutError, "Timeout of %dms exceeded", IMG_TIMEOUT);
+        PyErr_Format(IDSTimeoutError, "Timeout of %dms exceeded", timeout);
         return 1;
     case IS_CAPTURE_STATUS:
         PyErr_SetString(IDSCaptureStatus, "Transfer error.  Check capture status.");
@@ -205,6 +210,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     wchar_t fancy_filename[256];
     int filetype = IS_IMG_JPG;
     unsigned int quality = 100;
+	int timeout = IMG_TIMEOUT;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|iI", kwlist, &filename, &filetype, &quality)) {
         return NULL;
@@ -220,7 +226,7 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
     char *mem;
     INT image_id;
 
-    ret = get_next_image(self, &mem, &image_id);
+    ret = get_next_image(self, &mem, &image_id, timeout);
     if (ret) {
         /* Exception set, return */
         return NULL;
@@ -260,11 +266,20 @@ static PyObject *ids_core_Camera_next_save(ids_core_Camera *self, PyObject *args
 }
 
 static PyObject *ids_core_Camera_next(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
-    int ret;
+	static char *kwlist[] = {"timeout"};    
+	int ret;
     char *mem;
     INT image_id;
 
-    ret = get_next_image(self, &mem, &image_id);
+	int timeout;
+
+
+	printf(args);
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "i", kwlist, &timeout))
+		timeout = IMG_TIMEOUT;
+
+    ret = get_next_image(self, &mem, &image_id, timeout);
     if (ret) {
         /* Exception set, return */
         return NULL;
@@ -307,6 +322,7 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
     PyArrayObject* matrix;
 
     switch (color) {
+    case IS_CM_MONO8:
     case IS_CM_SENSOR_RAW8: {
         npy_intp dims[2];
         dims[0] = self->height;
@@ -394,7 +410,7 @@ PyMethodDef ids_core_Camera_methods[] = {
         "    IDSTimeoutError: An image was not available within the timeout.\n"
         "    IDSError: An unknown error occured in the uEye SDK."
     },
-    {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS,
+    {"next", (PyCFunction) ids_core_Camera_next, METH_VARARGS | METH_KEYWORDS,
         "next() -> image, metadata\n\n"
         "Gets next available image.\n\n"
         "Gets the next available image from the camera as a Numpy array\n"
