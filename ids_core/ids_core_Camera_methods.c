@@ -349,6 +349,152 @@ static PyObject *create_matrix(ids_core_Camera *self, char *mem) {
     return (PyObject*)matrix;
 }
 
+static int buffer_SingleCapture(ids_core_Camera *self, char **mem, INT *image_id, int timeout) {
+    int ret;
+    
+    ret = is_SetExternalTrigger(self->handle, IS_SET_TRIGGER_SOFTWARE);
+    if (ret) {
+        PyErr_SetString(PyExc_IOError, "We could not set external trigger!");
+        return -1;
+    }
+
+    ret = is_FreezeVideo(self->handle, IS_WAIT);
+    if (ret) {
+        PyErr_SetString(PyExc_RuntimeError, "We could not save an image to active image memory!");
+        return -1;
+    }
+    ret = is_WaitForNextImage(self->handle, timeout, mem, image_id);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    case IS_TIMED_OUT:
+        PyErr_Format(IDSTimeoutError, "Timeout of %dms exceeded", timeout);
+        return 1;
+    case IS_CAPTURE_STATUS:
+        PyErr_SetString(IDSCaptureStatus, "Transfer error.  Check capture status.");
+        return 1;
+    default:
+        raise_general_error(self, ret);
+        return 1;
+    }
+    ret = is_SetExternalTrigger(self->handle, IS_SET_TRIGGER_OFF);
+    if (ret) {
+        PyErr_SetString(PyExc_IOError, "We could not turn off trigger mode!");
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyObject *ids_core_Camera_singlecapture(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
+    static char *kwlist[] = {"timeout", NULL};    
+    int ret;
+    char *mem;
+    INT image_id;
+    int timeout = IMG_TIMEOUT;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|i", kwlist, &timeout)) {
+        return NULL;  // If null is not returned, the exception is queued to return at next command...
+    }
+
+    ret = buffer_SingleCapture(self, &mem, &image_id, timeout);
+    if (ret) {
+        /* Exception set, return */
+        return NULL;
+    }
+
+    PyObject *image = create_matrix(self, mem);
+    if (!image) {
+        return NULL;
+    }
+
+    PyObject *info = image_info(self, image_id);
+    if (!info) {
+        Py_DECREF(image);
+        return NULL;
+    }
+
+    ret = is_UnlockSeqBuf(self->handle, image_id, mem);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        Py_DECREF(image);
+        Py_DECREF(info);
+        raise_general_error(self, ret);
+        return NULL;
+    }
+
+    PyObject *tuple = Py_BuildValue("(OO)", image, info);
+
+    /* BuildValue INCREF's these objects, but we don't need them anymore */
+    Py_DECREF(image);
+    Py_DECREF(info);
+
+    return tuple;
+}
+
+static PyObject *ids_core_Camera_singlecapture_save(ids_core_Camera *self, PyObject *args, PyObject *kwds) {
+    static char *kwlist[] = {"filename", "filetype", "quality", NULL};
+    char *filename;
+    wchar_t fancy_filename[256];
+    int filetype = IS_IMG_JPG;
+    unsigned int quality = 100;
+    int timeout = IMG_TIMEOUT;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|iI", kwlist, &filename, &filetype, &quality)) {
+        return NULL;
+    }
+
+    swprintf(fancy_filename, 256, L"%hs", filename);
+
+    if (filetype != IS_IMG_JPG && filetype != IS_IMG_PNG && filetype != IS_IMG_BMP) {
+        PyErr_SetString(PyExc_ValueError, "Invalid image filetype");
+    }
+
+    int ret;
+    char *mem;
+    INT image_id;
+
+    ret = buffer_SingleCapture(self, &mem, &image_id, timeout);
+    if (ret) {
+        /* Exception set, return */
+        return NULL;
+    }
+
+    IMAGE_FILE_PARAMS ImageFileParams;
+    ImageFileParams.pwchFileName = fancy_filename;
+    ImageFileParams.nFileType = filetype;
+    ImageFileParams.nQuality = quality;
+    ImageFileParams.ppcImageMem = &mem;
+    ImageFileParams.pnImageID = (UINT*) &image_id;
+    ret = is_ImageFile(self->handle, IS_IMAGE_FILE_CMD_SAVE, (void*)&ImageFileParams, sizeof(ImageFileParams));
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        raise_general_error(self, ret);
+        return NULL;
+    }
+
+    PyObject *info = image_info(self, image_id);
+    if (!info) {
+        return NULL;
+    }
+
+    ret = is_UnlockSeqBuf(self->handle, image_id, mem);
+    switch (ret) {
+    case IS_SUCCESS:
+        break;
+    default:
+        Py_DECREF(info);
+        raise_general_error(self, ret);
+        return NULL;
+    }
+
+    return info;
+}
+
 PyMethodDef ids_core_Camera_methods[] = {
     {"capture_status", (PyCFunction) ids_core_Camera_capture_status, METH_NOARGS,
         "capture_status() -> status\n\n"
@@ -408,6 +554,39 @@ PyMethodDef ids_core_Camera_methods[] = {
         "    IDSError: An unknown error occured in the uEye SDK."
         "    NotImplementedError: The current color format cannot be converted\n"
         "        to a numpy array."
+    },
+    {"singlecapture", (PyCFunction) ids_core_Camera_singlecapture, METH_VARARGS | METH_KEYWORDS,
+        "singlecapture() -> image, metadata\n"
+        "or\n"
+        "singlecapture(processingTimeout) -> image, metadata\n\n"
+        "Makes one image.\n\n"
+        "Makes one image as a Numpy array\n"
+        "Blocks until image is available, or timeout occurs.\n\n"
+        "Returns:\n"
+        "    (image, metadata) tuple, where image is a Numpy array containing\n"
+        "    the image, and metadata is a dictionary containing image metadata.\n"
+        "    Timestamp is provided as a UTC datetime object\n\n"
+        "Raises:\n"
+        "    IDSTimeoutError: An image was not available within the timeout.\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
+        "    NotImplementedError: The current color format cannot be converted\n"
+        "        to a numpy array."
+    },
+    {"singlecapture_save", (PyCFunction) ids_core_Camera_singlecapture_save, METH_VARARGS | METH_KEYWORDS,
+        "singlecapture_save(filename [, filetype=ids_core.FILETYPE_JPG, quality=100]) -> metadata\n\n"
+        "Saves one image.\n\n"
+        "Using the uEye SDK image saving functions to save one image\n"
+        "image to disk.  Blocks until image is available, or timeout occurs.\n\n"
+        "Arguments:\n"
+        "    filename: File to save image to.\n"
+        "    filetype: Filetype to save as, one of ids_core.FILETYPE_*\n"
+        "    quality: Image quality for JPEG and PNG, with 100 as maximum quality\n\n"
+        "Returns:\n"
+        "    Dictionary containing image metadata.  Timestamp is provided in UTC.\n\n"
+        "Raises:\n"
+        "    ValueError: Invalid filetype.\n"
+        "    IDSTimeoutError: An image was not available within the timeout.\n"
+        "    IDSError: An unknown error occured in the uEye SDK."
     },
     {NULL}
 };
